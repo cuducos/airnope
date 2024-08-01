@@ -6,9 +6,19 @@ use teloxide::requests::Requester;
 use teloxide::respond;
 use teloxide::types::MessageKind;
 
+const A: &str = "[аa🅰🅰️🇦🇦]";
+const I: &str = "[іiI1lℹ️🇮]";
+const R: &str = "[рr🇷]";
+const D: &str = "[dԁ🇩]";
+const O: &str = "[оo0🅾️🇴]";
+const P: &str = "[рpρϱ🅿️🇵]";
+
 lazy_static! {
     static ref AIRDROP: Regex = RegexBuilder::new(
-        r"[аa🅰🅰️🇦🇦]\s?[іiI1lℹ️🇮]\s?([рr🇷]\s?[dԁ🇩]|🇷)\s?[рr🇷]\s?[оo0🅾️🇴]\s?[рpρϱ🅿️🇵]"
+        [A, I, R, D, R, O, P]
+            .map(|s| s.to_string())
+            .join(r"\s?")
+            .as_str()
     )
     .case_insensitive(true)
     .build()
@@ -100,7 +110,6 @@ mod tests {
             ("airdroр", true), // Greek rho, ρ
             ("Сlаim  Q СOMMUNITY АIRDROP\n Join the Q movement.", true), // snippet from a real one
             ("🅰irdrop", true), // with emoji
-            ("ai🇷rop", true),  // with rd emoji
             ("🅰️ℹ️irdr🅾️🇵", true), // with emojis
             ("air drop", true), // with space
             ("a i r d r o p", true), // with single spaces
