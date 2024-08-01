@@ -1,10 +1,10 @@
 # AirNope
 
-A simple and silent bot that keeps [Telegram's](https://telegram.org/) groups free from crypto airdrop spams.
+A simple, silent bot that keeps [Telegram](https://telegram.org/) groups free from crypto airdrop spams.
 
 ## What it does
 
- * deletes messages containing “airdrop” (including many characters variants)
+ * deletes messages containing “airdrop” (including many character variants)
  * removes the user who posted it from the group
 
 ## What it does not do
