@@ -1,0 +1,12 @@
+[package]
+name = "airnope"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+lazy_static = "1.5.0"
+log = "0.4.22"
+regex = "1.10.5"
+teloxide = { version = "0.12.2", features = ["ctrlc_handler"] }
+tokio = { version = "1.39.2", features = ["rt-multi-thread", "macros"] }
