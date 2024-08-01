@@ -7,11 +7,12 @@ use teloxide::respond;
 use teloxide::types::MessageKind;
 
 lazy_static! {
-    static ref AIRDROP: Regex =
-        RegexBuilder::new(r"[аa🅰🅰️🇦]\s?[іiI1lℹ️]\s?([рr]\s?[dԁ]|🇷)\s?[рr]\s?[оo0🅾️🇴]\s?[рpρϱ🅿️🇵]")
-            .case_insensitive(true)
-            .build()
-            .unwrap();
+    static ref AIRDROP: Regex = RegexBuilder::new(
+        r"[аa🅰🅰️🇦🇦]\s?[іiI1lℹ️🇮]\s?([рr🇷]\s?[dԁ🇩]|🇷)\s?[рr🇷]\s?[оo0🅾️🇴]\s?[рpρϱ🅿️🇵]"
+    )
+    .case_insensitive(true)
+    .build()
+    .unwrap();
 }
 
 fn is_spam(msg: Option<&str>) -> bool {
@@ -102,7 +103,9 @@ mod tests {
             ("ai🇷rop", true),  // with rd emoji
             ("🅰️ℹ️irdr🅾️🇵", true), // with emojis
             ("air drop", true), // with space
+            ("a i r d r o p", true), // with single spaces
             ("a i r d r o p", true), // with different kids of spaces
+            ("🇦 🇮 🇷 🇩 🇷 🇴 🇵", true), // with special characters and spaces
             ("42", false),
             ("", false),
         ];
