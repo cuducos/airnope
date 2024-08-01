@@ -4,8 +4,10 @@ A simple, silent bot that keeps [Telegram](https://telegram.org/) groups free fr
 
 ## What it does
 
- * deletes messages containing “airdrop” (including many character variants) if not sent by a group admin or owner
- * removes the user who posted it (and is not a group admin or owner) from the group
+When the user posting the message is **not** one of the group admins or the group owner:
+
+ * deletes the message if it containing “airdrop” (including many character variants)
+ * removes the user who posted it from the group
 
 ## What it does not do
 
