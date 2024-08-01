@@ -8,7 +8,7 @@ use teloxide::types::MessageKind;
 
 lazy_static! {
     static ref AIRDROP: Regex =
-        RegexBuilder::new(r"[аa🅰🅰️🇦][іiI1lℹ️]([рr][dԁ]|🇷)[рr][оo0🅾️🇴][рpρϱ🅿️🇵]")
+        RegexBuilder::new(r"[аa🅰🅰️🇦]\s?[іiI1lℹ️]\s?([рr]\s?[dԁ]|🇷)\s?[рr]\s?[оo0🅾️🇴]\s?[рpρϱ🅿️🇵]")
             .case_insensitive(true)
             .build()
             .unwrap();
@@ -101,6 +101,8 @@ mod tests {
             ("🅰irdrop", true), // with emoji
             ("ai🇷rop", true),  // with rd emoji
             ("🅰️ℹ️irdr🅾️🇵", true), // with emojis
+            ("air drop", true), // with space
+            ("a i r d r o p", true), // with different kids of spaces
             ("42", false),
             ("", false),
         ];
