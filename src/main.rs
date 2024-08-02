@@ -27,7 +27,11 @@ lazy_static! {
 
 fn is_spam(msg: Option<&str>) -> bool {
     if let Some(txt) = msg {
-        return AIRDROP.is_match(txt);
+        let result = AIRDROP.is_match(txt);
+        if result {
+            log::debug!("Message detected as spam: {:?}", txt);
+        }
+        return result;
     }
     false
 }
@@ -44,24 +48,26 @@ async fn ban(bot: &Bot, msg: &Message) -> Result<()> {
     Ok(())
 }
 
-async fn is_admin(bot: &Bot,msg: &Message) -> bool {
+async fn is_admin(bot: &Bot, msg: &Message) -> bool {
     if let Some(user) = &msg.from() {
         if let Ok(member) = bot.get_chat_member(msg.chat.id, user.id).await {
             match member.status() {
-            ChatMemberStatus::Administrator => return true,
-            ChatMemberStatus::Owner => return true,
-            _ => return false,
+                ChatMemberStatus::Administrator => return true,
+                ChatMemberStatus::Owner => return true,
+                _ => return false,
             }
-        }}
+        }
+    }
     false
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    pretty_env_logger::init(); // based on RUST_LOG environment variable
     let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
     teloxide::repl(bot, |bot: Bot, msg: Message| async move {
         if let MessageKind::Common(_) = &msg.kind {
-            if is_spam(msg.text()) && !is_admin(&bot, &msg).await{
+            if is_spam(msg.text()) && !is_admin(&bot, &msg).await {
                 if let Err(e) = tokio::try_join!(delete(&bot, &msg), ban(&bot, &msg)) {
                     log::error!("Error handling spam: {:?}", e);
                 }
