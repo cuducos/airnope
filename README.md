@@ -6,13 +6,13 @@ A simple, silent bot that keeps [Telegram](https://telegram.org/) groups free fr
 
 When the user posting the message is **not** one of the group admins or the group owner:
 
- * deletes the message if it containing “airdrop” (including many character variants)
+ * deletes the message if it contains “airdrop” (including many character variants)
  * removes the user who posted it from the group
 
 ## What it does not do
 
 * does **not** post any message in the group (avoids pollution of the group)
-* does **not** keep any history of messages or users
+* does **not** keep any history of messages or users<br>(it might temporarily log banned messages’ text for debugging purposes though)
 
 ## How to use it
 
