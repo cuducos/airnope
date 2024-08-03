@@ -8,8 +8,17 @@ A simple, silent bot that keeps [Telegram](https://telegram.org/) groups free fr
 
 When the user posting the message is **not** one of the group admins or the group owner:
 
- * deletes the message if it contains “airdrop” (including many character variants)
+ * deletes the message that are probably airdrop spam
  * removes the user who posted it from the group
+
+#### How it does
+
+The detection is done in two steps:
+
+1. the first filter detects if the message contains the word “airdrop” (including many character variants)
+2. the second step is a [zero-shot classification](https://huggingface.co/tasks/zero-shot-classification) to identify the probability of the message being a spam related to crypto airdrop
+
+Wanna see it in action? Check the how to run [REPL in our contributing guide](CONTRIBUTING.md#running-the-repl).
 
 ### What it does not do
 

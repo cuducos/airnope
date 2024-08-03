@@ -4,10 +4,11 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
+acap = "0.3.0"
 anyhow = "1.0.86"
-lazy_static = "1.5.0"
 log = "0.4.22"
 pretty_env_logger = "0.5.0"
 regex = "1.10.5"
+rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 teloxide = { version = "0.12.2", features = ["ctrlc_handler"] }
 tokio = { version = "1.39.2", features = ["rt-multi-thread", "macros"] }

@@ -1,0 +1,1 @@
+worker: cargo run --release
