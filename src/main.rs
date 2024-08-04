@@ -63,11 +63,17 @@ async fn process_message(bot: &Bot, msg: &Message) {
 #[tokio::main]
 async fn main() -> Result<()> {
     pretty_env_logger::init(); // based on RUST_LOG environment variable
+
     std::thread::spawn(|| {
         if let Err(e) = embedding::serve() {
             log::error!("Error spawning the embedding server: {}", e);
         }
     });
+
+    if args().any(|arg| arg == "--download") {
+        Pipeline::new().await?;
+        return Ok(());
+    }
 
     if args().any(|arg| arg == "--repl") {
         repl::run().await?;
@@ -80,5 +86,6 @@ async fn main() -> Result<()> {
         respond(())
     })
     .await;
+
     Ok(())
 }

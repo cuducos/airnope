@@ -10,6 +10,7 @@ RUN apt-get update && \
     rm -rf src/*
 
 COPY src ./src
-RUN cargo build --release
+RUN cargo build --release && \
+    cargo run -- --download
 
-CMD ["cargo", "run", "--release"]
+CMD ["sh", "-c", "cargo run --release"]
