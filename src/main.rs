@@ -6,7 +6,7 @@ use teloxide::respond;
 use teloxide::types::MessageKind;
 use zsc::ZeroShotClassification;
 
-mod embedding;
+mod embeddings;
 mod re;
 mod repl;
 mod telegram;
@@ -65,11 +65,11 @@ async fn main() -> Result<()> {
     pretty_env_logger::init(); // based on RUST_LOG environment variable
 
     std::thread::spawn(|| {
-        if let Err(e) = embedding::serve() {
+        if let Err(e) = embeddings::serve() {
             log::error!("Error spawning the embedding server: {}", e);
         }
     });
-    embedding::wait_until_ready().await?;
+    embeddings::wait_until_ready().await?;
 
     if args().any(|arg| arg == "--download") {
         Pipeline::new().await?;

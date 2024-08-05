@@ -1,4 +1,4 @@
-use crate::embedding::embedding_for;
+use crate::embeddings::embeddings_for;
 use acap::cos::cosine_distance;
 use anyhow::Result;
 
@@ -13,12 +13,12 @@ pub struct ZeroShotClassification {
 impl ZeroShotClassification {
     pub async fn new() -> Result<Self> {
         Ok(Self {
-            vector: embedding_for(LABEL).await?,
+            vector: embeddings_for(LABEL).await?,
         })
     }
 
     pub async fn score(&self, txt: &str) -> Result<f32> {
-        let vector = embedding_for(txt).await?;
+        let vector = embeddings_for(txt).await?;
         Ok(cosine_distance(vector.to_vec(), self.vector.to_vec()))
     }
 
@@ -39,7 +39,7 @@ impl ZeroShotClassification {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::embedding;
+    use crate::embeddings;
     use tokio::io::AsyncReadExt;
     use tokio::runtime::Handle;
     use tokio::{fs, task};
@@ -47,9 +47,9 @@ mod tests {
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_is_spam() {
         std::thread::spawn(|| {
-            crate::embedding::serve().unwrap();
+            crate::embeddings::serve().unwrap();
         });
-        embedding::wait_until_ready().await.unwrap();
+        embeddings::wait_until_ready().await.unwrap();
 
         let model = task::block_in_place(move || {
             Handle::current().block_on(async move { ZeroShotClassification::new().await.unwrap() })
