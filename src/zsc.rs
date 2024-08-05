@@ -3,7 +3,7 @@ use acap::cos::cosine_distance;
 use anyhow::Result;
 
 const LABEL: &str = "crypto airdrop spam message";
-const THRESHOLD: f32 = 0.7;
+const THRESHOLD: f32 = 0.6;
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
