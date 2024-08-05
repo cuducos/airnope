@@ -7,7 +7,7 @@ COPY src ./src
 RUN apt-get clean && \
     apt-get update && \
     apt-get install -y ca-certificates g++ libssl-dev pkg-config && \
-    cargo build --release && \
+    cargo build --release --jobs=1 && \
     cargo run -- --download
 
 CMD ["sh", "-c", "cargo run --release"]
