@@ -69,6 +69,7 @@ async fn main() -> Result<()> {
             log::error!("Error spawning the embedding server: {}", e);
         }
     });
+    embedding::wait_until_ready().await?;
 
     if args().any(|arg| arg == "--download") {
         Pipeline::new().await?;

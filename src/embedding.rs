@@ -13,7 +13,7 @@ use tokio::net::UnixStream as TokioUnixStream;
 const PATH: &str = ".airnope.embedding.socket";
 const EOL: &[u8] = b"\n";
 
-fn to_array(vector: &[f32]) -> Result<[f32; 384]> {
+pub fn to_array(vector: &[f32]) -> Result<[f32; 384]> {
     if vector.len() != 384 {
         return Err(anyhow!("Embedding does not have 384 numbers"));
     }
@@ -22,6 +22,15 @@ fn to_array(vector: &[f32]) -> Result<[f32; 384]> {
         result[idx] = *num;
     }
     Ok(result)
+}
+
+pub fn text_to_array(text: String) -> Result<[f32; 384]> {
+    to_array(
+        &text
+            .split(',')
+            .filter_map(|n| n.trim().parse().ok())
+            .collect::<Vec<f32>>(),
+    )
 }
 
 pub struct ZeroShotClassification {
@@ -39,7 +48,7 @@ impl ZeroShotClassification {
         Ok(Self { model, cache })
     }
 
-    fn embedding(&mut self, text: String) -> Result<String> {
+    pub fn embedding(&mut self, text: String) -> Result<String> {
         let key = text.as_bytes().to_vec();
         let vector = match self.cache.get(&key) {
             Some(v) => *v,
@@ -120,29 +129,43 @@ pub fn serve() -> Result<()> {
     Ok(())
 }
 
-pub async fn embedding_for(text: &str) -> Result<[f32; 384]> {
+pub async fn wait_until_ready() -> Result<()> {
     loop {
         if fs::metadata(PATH).is_ok() {
             break;
         }
 
-        log::debug!("Waiting for embedding server...");
-        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+        log::debug!("Waiting for embedding socket...");
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
     }
 
+    let mut retries = 32;
+    let mut stream = TokioUnixStream::connect(PATH).await;
+    while retries > 0 {
+        if stream.is_ok() {
+            return Ok(());
+        }
+
+        log::debug!("Waiting for connection to the embedding socket...");
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+        stream = TokioUnixStream::connect(PATH).await;
+        retries -= 1;
+    }
+
+    Err(anyhow!(
+        "Could not connect to the embedding socket: {:?}",
+        stream
+    ))
+}
+
+pub async fn embedding_for(text: &str) -> Result<[f32; 384]> {
     let mut stream = TokioUnixStream::connect(PATH).await?;
     stream.write_all(text.as_bytes()).await?;
-
     let mut reader = BufReader::new(&mut stream);
     let mut response = vec![];
     reader.read_until(EOL[0], &mut response).await?;
 
     let text = String::from_utf8_lossy(&response);
-    let result = to_array(
-        &text
-            .split(',')
-            .filter_map(|n| n.trim().parse().ok())
-            .collect::<Vec<f32>>(),
-    )?;
-    Ok(result)
+    text_to_array(text.to_string())
 }
