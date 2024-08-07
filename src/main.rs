@@ -1,9 +1,12 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use embeddings::Embeddings;
 use re::RegularExpression;
-use std::env::args;
+use std::env;
+use std::sync::Arc;
 use teloxide::prelude::{Bot, Message};
 use teloxide::respond;
 use teloxide::types::MessageKind;
+use tokio::sync::Mutex;
 use zsc::ZeroShotClassification;
 
 mod embeddings;
@@ -12,81 +15,66 @@ mod repl;
 mod telegram;
 mod zsc;
 
-#[derive(Clone)]
-struct Pipeline {
-    regex: RegularExpression,
-    zero_shot: ZeroShotClassification,
-}
+const HELP: &str = "Usage: airnope [ --repl | --download ]";
 
-impl Pipeline {
-    async fn new() -> Result<Self> {
-        Ok(Self {
-            regex: RegularExpression::new().await?,
-            zero_shot: ZeroShotClassification::new().await?,
-        })
+pub async fn is_spam(txt: &str) -> Result<bool> {
+    let regex = RegularExpression::new().await?;
+    if !regex.is_spam(txt).await? {
+        return Ok(false);
     }
-
-    async fn is_spam(&self, txt: String) -> Result<bool> {
-        Ok(self.regex.is_spam(&txt).await? && self.zero_shot.is_spam(&txt).await?)
-    }
+    // TODO: how to reuse Embeddings so we just load the model once in the app?
+    let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
+    let zero_shot = ZeroShotClassification::new(embeddings).await?;
+    zero_shot.is_spam(txt).await
 }
 
 async fn process_message(bot: &Bot, msg: &Message) {
     if let MessageKind::Common(_) = &msg.kind {
         if let Some(txt) = msg.text() {
-            match Pipeline::new().await {
-                Ok(pipeline) => {
-                    let result = pipeline.is_spam(txt.to_string()).await;
-                    if let Err(e) = result {
-                        log::error!("Error in the pipeline: {:?}", e);
-                        return;
-                    }
-                    if let Ok(false) = result {
-                        return;
-                    }
-                    if telegram::is_admin(bot, msg).await {
-                        return;
-                    }
-                    if let Err(e) = tokio::try_join!(
-                        telegram::delete_message(bot, msg),
-                        telegram::ban_user(bot, msg),
-                    ) {
-                        log::error!("Error handling spam: {:?}", e);
-                    }
-                }
-                Err(e) => log::error!("Error creating the pipeline: {:?}", e),
+            let result = is_spam(txt).await;
+            if let Err(e) = result {
+                log::error!("Error in the pipeline: {:?}", e);
+                return;
+            }
+            if let Ok(false) = result {
+                return;
+            }
+            if telegram::is_admin(bot, msg).await {
+                return;
+            }
+            if let Err(e) = tokio::try_join!(
+                telegram::delete_message(bot, msg),
+                telegram::ban_user(bot, msg),
+            ) {
+                log::error!("Error handling spam: {:?}", e);
             }
         }
     }
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     pretty_env_logger::init(); // based on RUST_LOG environment variable
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 2 {
+        log::error!("{}", HELP);
+    }
+    if args.len() == 2 {
+        match args[1].as_str() {
+            "--download" => {
+                let _ = Embeddings::new().await?;
+                return Ok(());
+            }
+            "--repl" => return repl::run().await,
 
-    std::thread::spawn(|| {
-        if let Err(e) = embeddings::serve() {
-            log::error!("Error spawning the embedding server: {}", e);
+            unknown => return Err(anyhow!("Unknown option: {}\n{}", unknown, HELP)),
         }
-    });
-    embeddings::wait_until_ready().await?;
-
-    if args().any(|arg| arg == "--download") {
-        Pipeline::new().await?;
-        return Ok(());
     }
-
-    if args().any(|arg| arg == "--repl") {
-        repl::run().await?;
-        return Ok(());
-    }
-
     let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
     teloxide::repl(bot, |bot: Bot, msg: Message| async move {
         process_message(&bot, &msg).await;
         respond(())
     })
     .await;
-
     Ok(())
 }

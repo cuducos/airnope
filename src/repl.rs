@@ -17,14 +17,13 @@ fn capture_input() -> Result<String> {
 }
 
 pub async fn run() -> Result<()> {
-    let pipeline = crate::Pipeline::new().await?;
     println!("Type `exit` to quit.");
     loop {
         let input = capture_input()?;
         if input == "exit" {
             break;
         }
-        if pipeline.is_spam(input).await? {
+        if crate::is_spam(input.as_str()).await? {
             println!("Spam");
         } else {
             println!("Not spam");

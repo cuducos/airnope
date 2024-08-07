@@ -1,24 +1,27 @@
-use crate::embeddings::embeddings_for;
+use std::sync::Arc;
+
+use crate::embeddings::{embeddings_for, Embeddings};
 use acap::cos::cosine_distance;
 use anyhow::Result;
+use tokio::sync::Mutex;
 
-const LABEL: &str = "crypto airdrop spam message";
+pub const LABEL: &str = "crypto airdrop spam message";
 const THRESHOLD: f32 = 0.6;
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
+    embeddings: Arc<Mutex<Embeddings>>,
     vector: [f32; 384],
 }
 
 impl ZeroShotClassification {
-    pub async fn new() -> Result<Self> {
-        Ok(Self {
-            vector: embeddings_for(LABEL).await?,
-        })
+    pub async fn new(embeddings: Arc<Mutex<Embeddings>>) -> Result<Self> {
+        let vector = embeddings_for(Arc::clone(&embeddings), LABEL).await?;
+        Ok(Self { embeddings, vector })
     }
 
     pub async fn score(&self, txt: &str) -> Result<f32> {
-        let vector = embeddings_for(txt).await?;
+        let vector = embeddings_for(Arc::clone(&self.embeddings), txt).await?;
         Ok(cosine_distance(vector.to_vec(), self.vector.to_vec()))
     }
 
@@ -39,21 +42,13 @@ impl ZeroShotClassification {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::embeddings;
+    use tokio::fs;
     use tokio::io::AsyncReadExt;
-    use tokio::runtime::Handle;
-    use tokio::{fs, task};
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_is_spam() {
-        std::thread::spawn(|| {
-            crate::embeddings::serve().unwrap();
-        });
-        embeddings::wait_until_ready().await.unwrap();
-
-        let model = task::block_in_place(move || {
-            Handle::current().block_on(async move { ZeroShotClassification::new().await.unwrap() })
-        });
+        let embeddings = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
+        let model = ZeroShotClassification::new(embeddings).await.unwrap();
 
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
