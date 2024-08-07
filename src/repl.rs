@@ -1,5 +1,11 @@
 use anyhow::Result;
-use std::io::{stdin, stdout, Write};
+use std::{
+    io::{stdin, stdout, Write},
+    sync::Arc,
+};
+use tokio::sync::Mutex;
+
+use crate::embeddings::Embeddings;
 
 fn capture_input() -> Result<String> {
     let mut input = "".to_string();
@@ -12,18 +18,17 @@ fn capture_input() -> Result<String> {
     if let Some('\r') = input.chars().next_back() {
         input.pop();
     }
-
     Ok(input)
 }
 
-pub async fn run() -> Result<()> {
+pub async fn run(embeddings: &Arc<Mutex<Embeddings>>) -> Result<()> {
     println!("Type `exit` to quit.");
     loop {
         let input = capture_input()?;
         if input == "exit" {
             break;
         }
-        if crate::is_spam(input.as_str()).await? {
+        if crate::is_spam(embeddings, input.as_str()).await? {
             println!("Spam");
         } else {
             println!("Not spam");

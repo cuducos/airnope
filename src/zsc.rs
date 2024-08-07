@@ -10,23 +10,22 @@ const THRESHOLD: f32 = 0.6;
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
-    embeddings: Arc<Mutex<Embeddings>>,
     vector: [f32; 384],
 }
 
 impl ZeroShotClassification {
-    pub async fn new(embeddings: Arc<Mutex<Embeddings>>) -> Result<Self> {
-        let vector = embeddings_for(Arc::clone(&embeddings), LABEL).await?;
-        Ok(Self { embeddings, vector })
+    pub async fn new(embeddings: &Arc<Mutex<Embeddings>>) -> Result<Self> {
+        let vector = embeddings_for(Arc::clone(embeddings), LABEL).await?;
+        Ok(Self { vector })
     }
 
-    pub async fn score(&self, txt: &str) -> Result<f32> {
-        let vector = embeddings_for(Arc::clone(&self.embeddings), txt).await?;
+    pub async fn score(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<f32> {
+        let vector = embeddings_for(Arc::clone(embeddings), txt).await?;
         Ok(cosine_distance(vector.to_vec(), self.vector.to_vec()))
     }
 
-    pub async fn is_spam(&self, txt: &str) -> Result<bool> {
-        let score = self.score(txt).await?;
+    pub async fn is_spam(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<bool> {
+        let score = self.score(embeddings, txt).await?;
         let result = score > THRESHOLD;
         if result {
             log::debug!(
@@ -48,7 +47,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_is_spam() {
         let embeddings = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
-        let model = ZeroShotClassification::new(embeddings).await.unwrap();
+        let model = ZeroShotClassification::new(&embeddings).await.unwrap();
 
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
@@ -57,14 +56,14 @@ mod tests {
             let mut file = fs::File::open(&path).await.unwrap();
             file.read_to_string(&mut contents).await.unwrap();
 
-            let got = model.is_spam(&contents).await.unwrap();
+            let got = model.is_spam(&embeddings, &contents).await.unwrap();
             let expected = path
                 .file_stem()
                 .unwrap()
                 .to_str()
                 .unwrap()
                 .starts_with("spam");
-            let score = model.score(&contents).await.unwrap();
+            let score = model.score(&embeddings, &contents).await.unwrap();
 
             assert_eq!(
                 expected,
