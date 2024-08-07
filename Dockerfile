@@ -1,4 +1,4 @@
-FROM rust:1-slim-bookworm AS libtorch
+FROM debian:bookworm-slim AS libtorch
 WORKDIR /usr/src
 
 ENV BUILD_PKGS="ca-certificates curl unzip"
