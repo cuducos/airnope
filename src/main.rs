@@ -14,9 +14,10 @@ mod embeddings;
 mod re;
 mod repl;
 mod telegram;
+mod web;
 mod zsc;
 
-const HELP: &str = "Usage: airnope [ --repl | --download ]";
+const HELP: &str = "Usage: airnope [ --repl | --web | --download ]";
 
 pub async fn is_spam(embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<bool> {
     let regex = RegularExpression::new().await?;
@@ -63,6 +64,7 @@ async fn main() -> Result<()> {
         match args[1].as_str() {
             "--download" => return Ok(()),
             "--repl" => return repl::run(&embeddings).await,
+            "--web" => return web::run().await,
             unknown => return Err(anyhow!("Unknown option: {}\n{}", unknown, HELP)),
         }
     }
