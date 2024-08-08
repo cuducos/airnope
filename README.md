@@ -44,7 +44,9 @@ We are also considering the creation of a database of spam messages to further e
 
 <summary>Can I test it to see what messages AirNope would consider spam?</summary>
 
-Sure! The easiest way is to create a group and [add AirNope](#how-to-use-airnope). Since you would then be the group owner, you will need a second account (friends!) to join the group to see the bot in action.
+Sure! The easiet way to use the [playground](https://airnope-playground.onrender.com).
+
+The second easiest way is to create a group and [add AirNope](#how-to-use-airnope). Since you would then be the group owner, you will need a second account (friends!) to join the group to see the bot in action.
 
 Alternatively, you can use [Docker](https://docs.docker.com/get-started/) and your terminal to test messages locally:
 
