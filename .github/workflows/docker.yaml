@@ -37,3 +37,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Deploy
+        env:
+          url: ${{ secrets.RENDER_DEPLOY_WEBHOOK }}
+        run: curl "$url"
