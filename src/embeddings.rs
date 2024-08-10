@@ -53,6 +53,11 @@ pub async fn embeddings_for(model: Arc<Mutex<Embeddings>>, text: &str) -> Result
     locked.create(text)
 }
 
+pub async fn download() -> Result<()> {
+    Embeddings::new().await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
