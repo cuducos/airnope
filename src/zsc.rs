@@ -5,7 +5,7 @@ use acap::cos::cosine_distance;
 use anyhow::Result;
 use tokio::sync::Mutex;
 
-pub const LABEL: &str = "crypto airdrop spam message";
+pub const LABEL: &str = "claim crypto airdrop spam";
 pub const THRESHOLD: f32 = 0.55;
 
 #[derive(Clone)]
