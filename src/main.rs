@@ -10,6 +10,7 @@ use teloxide::{dptree, respond};
 use tokio::sync::Mutex;
 use zsc::ZeroShotClassification;
 
+mod bench;
 mod embeddings;
 mod re;
 mod repl;
@@ -17,7 +18,7 @@ mod telegram;
 mod web;
 mod zsc;
 
-const HELP: &str = "Usage: airnope [ --repl | --web | --download ]";
+const HELP: &str = "Usage: airnope [ --repl | --web | --download | --bench ]";
 
 pub async fn is_spam(embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<bool> {
     let regex = RegularExpression::new().await?;
@@ -56,18 +57,20 @@ async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &M
 async fn main() -> Result<()> {
     pretty_env_logger::init(); // based on RUST_LOG environment variable
     let args: Vec<String> = env::args().collect();
-    if args.len() > 2 {
+    if args.len() > 2 && args[1] != "--bench" {
         return Err(anyhow!("{}", HELP));
     }
-    let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
-    if args.len() == 2 {
+    if args.len() >= 2 {
         match args[1].as_str() {
             "--download" => return Ok(()),
-            "--repl" => return repl::run(&embeddings).await,
+            "--repl" => return repl::run().await,
             "--web" => return web::run().await,
+            "--bench" => return bench::run().await,
             unknown => return Err(anyhow!("Unknown option: {}\n{}", unknown, HELP)),
         }
     }
+
+    let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
     let handler = Update::filter_message().endpoint(
         |bot: Bot, embeddings: Arc<Mutex<Embeddings>>, msg: Message| async move {
