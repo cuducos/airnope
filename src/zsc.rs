@@ -6,7 +6,7 @@ use anyhow::Result;
 use tokio::sync::Mutex;
 
 pub const LABEL: &str = "claim crypto airdrop spam";
-pub const THRESHOLD: f32 = 0.55;
+pub const THRESHOLD: f32 = 0.5;
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
