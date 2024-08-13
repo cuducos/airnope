@@ -6,9 +6,11 @@ use rust_bert::pipelines::sentence_embeddings::{
 use std::{num::NonZeroUsize, sync::Arc};
 use tokio::{sync::Mutex, task::block_in_place};
 
+pub const EMBEDDINGS_SIZE: usize = 384;
+
 pub struct Embeddings {
     model: SentenceEmbeddingsModel,
-    cache: LruCache<Vec<u8>, [f32; 384]>,
+    cache: LruCache<Vec<u8>, [f32; EMBEDDINGS_SIZE]>,
 }
 
 impl Embeddings {
@@ -21,16 +23,24 @@ impl Embeddings {
         Ok(Self { model, cache })
     }
 
-    fn calculate_from_model(&mut self, cache_key: Vec<u8>, text: &str) -> Result<[f32; 384]> {
+    fn calculate_from_model(
+        &mut self,
+        cache_key: Vec<u8>,
+        text: &str,
+    ) -> Result<[f32; EMBEDDINGS_SIZE]> {
         let results = self.model.encode(&[text])?;
         let vector = results
             .first()
             .ok_or(anyhow!("Error creating embedding"))?
             .clone();
-        if vector.len() != 384 {
-            return Err(anyhow!("Embedding does not have 384 numbers"));
+        if vector.len() != EMBEDDINGS_SIZE {
+            return Err(anyhow!(
+                "Embedding does not have {} numbers, has {} instead",
+                EMBEDDINGS_SIZE,
+                vector.len()
+            ));
         }
-        let mut result = [0 as f32; 384];
+        let mut result = [0 as f32; EMBEDDINGS_SIZE];
         for (idx, num) in vector.iter().enumerate() {
             result[idx] = *num;
         }
@@ -38,7 +48,7 @@ impl Embeddings {
         Ok(result)
     }
 
-    fn create(&mut self, text: &str) -> Result<[f32; 384]> {
+    fn create(&mut self, text: &str) -> Result<[f32; EMBEDDINGS_SIZE]> {
         let cache_key = text.as_bytes().to_vec();
         let result = match self.cache.get(&cache_key) {
             Some(v) => *v,
@@ -48,7 +58,10 @@ impl Embeddings {
     }
 }
 
-pub async fn embeddings_for(model: Arc<Mutex<Embeddings>>, text: &str) -> Result<[f32; 384]> {
+pub async fn embeddings_for(
+    model: Arc<Mutex<Embeddings>>,
+    text: &str,
+) -> Result<[f32; EMBEDDINGS_SIZE]> {
     let mut locked = model.lock().await;
     locked.create(text)
 }
@@ -70,7 +83,13 @@ mod tests {
         assert!(got.is_ok(), "expected no error, got {:?}", got);
 
         let vector = got.unwrap();
-        assert_eq!(vector.len(), 384, "expected 384, got {:?}", vector.len());
+        assert_eq!(
+            vector.len(),
+            EMBEDDINGS_SIZE,
+            "expected {}, got {:?}",
+            EMBEDDINGS_SIZE,
+            vector.len()
+        );
         assert!(vector[0] != 0.0);
     }
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::embeddings::{embeddings_for, Embeddings};
+use crate::embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE};
 use acap::cos::cosine_distance;
 use anyhow::Result;
 use tokio::sync::Mutex;
@@ -10,7 +10,7 @@ pub const THRESHOLD: f32 = 0.5;
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
-    vector: [f32; 384],
+    vector: [f32; EMBEDDINGS_SIZE],
 }
 
 impl ZeroShotClassification {

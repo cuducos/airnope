@@ -1,7 +1,7 @@
-use crate::embeddings::{embeddings_for, Embeddings};
+use crate::embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE};
 use crate::zsc::{LABEL, THRESHOLD};
 use acap::cos::cosine_distance;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use std::env;
 use std::fs;
@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 
 struct Input {
     label: String,
-    vector: [f32; 384],
+    vector: [f32; EMBEDDINGS_SIZE],
 }
 
 impl Input {
@@ -54,7 +54,7 @@ impl Task {
         Ok(Self {
             name,
             is_spam,
-            content: fs::read_to_string(path)?,
+            content: fs::read_to_string(path).context(format!("Reading {}", path.display()))?,
         })
     }
 }
