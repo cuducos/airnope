@@ -1,6 +1,9 @@
-use crate::embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE};
-use crate::zsc::{LABEL, THRESHOLD};
 use acap::cos::cosine_distance;
+use airnope::embeddings::embeddings_for;
+use airnope::embeddings::Embeddings;
+use airnope::embeddings::EMBEDDINGS_SIZE;
+use airnope::zsc::LABEL;
+use airnope::zsc::THRESHOLD;
 use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use std::env;
@@ -110,21 +113,16 @@ fn paths() -> Result<Vec<PathBuf>> {
 
 fn labels() -> Result<Vec<String>> {
     let mut args: Vec<String> = env::args().collect();
-    let start = match args.iter().position(|arg| arg.as_str() == "--bench") {
-        Some(idx) => idx,
-        None => {
-            return Err(anyhow!("Could not find --bench flag"));
-        }
-    };
-    args[start] = LABEL.to_string();
-    let labels = &args[start..];
-    if labels.len() < 2 {
-        return Err(anyhow!("Usage: airnope --bench <label1> <label2> ...",));
+    if args.is_empty() {
+        return Err(anyhow!("Usage: airnope-bench <label1> <label2> ...",));
     }
-    Ok(labels.to_vec())
+    args.insert(0, LABEL.to_string());
+    Ok(args.to_vec())
 }
 
-pub async fn run() -> Result<()> {
+#[tokio::main(flavor = "multi_thread")]
+async fn main() -> Result<()> {
+    pretty_env_logger::init(); // based on RUST_LOG environment variable
     let labels = labels()?;
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();

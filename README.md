@@ -59,7 +59,7 @@ $ docker pull ghcr.io/cuducos/airnope:main
 Then start the [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop):
 
 ```console
-$ docker run -it -e RUST_LOG="airnope=debug" ghcr.io/cuducos/airnope:main airnope --repl
+$ docker run -it -e RUST_LOG="airnope=debug" ghcr.io/cuducos/airnope:main airnope-repl
 ```
 
 It is a long command, but let's break it down:
@@ -68,7 +68,7 @@ It is a long command, but let's break it down:
 * `-it` sets it to be interactive (menaing, you cna type stuff in the execution from your terminal)
 * `-e RUST_LOG="airnope-debug"` is **optional**, it makes information about each classifier visible in the output, so you can know which step flagged the message as spam)
 * `cuducos/airnope:main` is the container image we are using
-* finalle, `airnope --repl` is the command we are running inside that container image
+* finalle, `airnope-repl` is the command we are running inside that container image
 
 It is interactive, so you can type anything. Here is how it looks like with three messages to illustrate it:
 

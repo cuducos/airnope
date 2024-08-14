@@ -18,7 +18,7 @@ $ cargo run
 For developing and manual testing, there is a [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop). No Telegram token is required. Set the environment variable `RUST_LOG` to `airnope=debug` to see extra information.
 
 ```console
-$ cargo run -- --repl
+$ cargo run --bin airnope-repl
 ```
 
 ## Playing with the zero-shot classifier
@@ -26,7 +26,7 @@ $ cargo run -- --repl
 This classifier is based on a label, which is a constant in AirNope. You can benchmark alternative labels with the option `--bench` and passing alternative labels, for example:
 
 ```console
-$ cargo run -- --bench "airdop spam" "generic spam offering crypto airdrop"
+$ cargo run --bin airnope-bench "airdop spam" "generic spam offering crypto airdrop"
     Finished dev [unoptimized + debuginfo] target(s) in 0.32s
      Running `target/debug/airnope --bench 'airdop spam' 'generic spam offering crypto airdrop' 'crypto airdrop claim spam' 'crypto airdrop spam'`
 

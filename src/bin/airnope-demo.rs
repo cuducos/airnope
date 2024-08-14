@@ -1,9 +1,9 @@
-use crate::{embeddings::Embeddings, is_spam};
 use actix_cors::Cors;
 use actix_web::{
     web::{self, Data, Json},
     App, Error, HttpRequest, HttpResponse, HttpServer,
 };
+use airnope::{embeddings::Embeddings, is_spam};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -70,7 +70,9 @@ async fn handle_request(
     }
 }
 
-pub async fn run() -> anyhow::Result<()> {
+#[tokio::main(flavor = "multi_thread")]
+async fn main() -> anyhow::Result<()> {
+    pretty_env_logger::init(); // based on RUST_LOG environment variable
     let ips: Arc<DashMap<String, Instant>> = Arc::new(DashMap::new());
     let port: u16 = env::var("PORT")
         .unwrap_or_else(|_| "24601".to_string())

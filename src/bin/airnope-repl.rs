@@ -1,11 +1,10 @@
+use airnope::{embeddings::Embeddings, is_spam};
 use anyhow::Result;
 use std::{
     io::{stdin, stdout, Write},
     sync::Arc,
 };
 use tokio::sync::Mutex;
-
-use crate::embeddings::Embeddings;
 
 fn capture_input() -> Result<String> {
     let mut input = "".to_string();
@@ -21,7 +20,9 @@ fn capture_input() -> Result<String> {
     Ok(input)
 }
 
-pub async fn run() -> Result<()> {
+#[tokio::main(flavor = "multi_thread")]
+pub async fn main() -> Result<()> {
+    pretty_env_logger::init(); // based on RUST_LOG environment variable
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     println!("Type `exit` to quit.");
     loop {
@@ -29,7 +30,7 @@ pub async fn run() -> Result<()> {
         if input == "exit" {
             break;
         }
-        if crate::is_spam(&embeddings, input.as_str()).await? {
+        if is_spam(&embeddings, input.as_str()).await? {
             println!("Spam");
         } else {
             println!("Not spam");
