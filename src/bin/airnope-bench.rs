@@ -142,18 +142,12 @@ fn paths() -> Result<Vec<PathBuf>> {
 
 fn labels() -> Result<Vec<Vec<String>>> {
     let args: Vec<String> = env::args().collect();
-    let start = match args.iter().position(|arg| arg.contains("airnope")) {
-        Some(idx) => idx,
-        None => {
-            return Err(anyhow!("Usage: airnope-bench <label1> [label2] ..."));
-        }
-    };
-    if args[start..].is_empty() {
+    if args.len() < 2 {
         return Err(anyhow!("Usage: airnope-bench <label1> [label2] ...",));
     }
     let mut labels = vec![LABELS.into_iter().map(|label| label.to_string()).collect()];
     labels.extend(
-        args[start..]
+        args[1..]
             .iter()
             .map(|label| vec![label.clone()])
             .collect::<Vec<_>>(),
