@@ -113,11 +113,18 @@ fn paths() -> Result<Vec<PathBuf>> {
 
 fn labels() -> Result<Vec<String>> {
     let mut args: Vec<String> = env::args().collect();
-    if args.is_empty() {
-        return Err(anyhow!("Usage: airnope-bench <label1> <label2> ...",));
+    let start = match args.iter().position(|arg| arg.contains("airnope")) {
+        Some(idx) => idx,
+        None => {
+            return Err(anyhow!("Could not find --bench flag"));
+        }
+    };
+    args[start] = LABEL.to_string();
+    let labels = &args[start..];
+    if labels.len() < 2 {
+        return Err(anyhow!("Usage: airnope-bench <label1> [label2] ...",));
     }
-    args.insert(0, LABEL.to_string());
-    Ok(args.to_vec())
+    Ok(labels.to_vec())
 }
 
 #[tokio::main(flavor = "multi_thread")]
