@@ -1,22 +1,34 @@
 use crate::embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE};
 use acap::cos::cosine_distance;
 use anyhow::Result;
+use futures::future::try_join_all;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-pub const LABELS: [&str; 1] = ["claim crypto airdrop spam"];
+pub const LABELS: [&str; 2] = ["claim crypto airdrop spam", "airdrop event announcement"];
 pub const THRESHOLD: f32 = 0.5;
+
+type LabelVectors = [[f32; EMBEDDINGS_SIZE]; LABELS.len()];
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
-    vectors: [[f32; EMBEDDINGS_SIZE]; LABELS.len()],
+    vectors: LabelVectors,
 }
 
 impl ZeroShotClassification {
     pub async fn new(embeddings: &Arc<Mutex<Embeddings>>) -> Result<Self> {
-        let vectors = [embeddings_for(Arc::clone(embeddings), LABELS[0]).await?];
-        Ok(Self { vectors })
+        match try_join_all(
+            LABELS
+                .iter()
+                .map(|label| embeddings_for(Arc::clone(embeddings), label)),
+        )
+        .await?
+        .try_into()
+        {
+            Ok(vectors) => Ok(Self { vectors }),
+            Err(_) => Err(anyhow::anyhow!("Failed to get embeddings for labels")),
+        }
     }
 
     pub async fn score(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<f32> {
