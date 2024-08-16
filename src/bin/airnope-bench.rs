@@ -149,7 +149,7 @@ fn labels() -> Result<Vec<Vec<String>>> {
     labels.extend(
         args[1..]
             .iter()
-            .map(|label| vec![label.clone()])
+            .map(|label| label.split(',').map(|val| val.trim().to_string()).collect())
             .collect::<Vec<_>>(),
     );
     Ok(labels.to_vec())

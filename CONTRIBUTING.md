@@ -61,6 +61,12 @@ $ cargo run --bin airnope-bench "airdop spam" "generic spam offering crypto aird
     ✔ spam7.txt     0.581 (+0.031)
 ```
 
+To test combined labels, separate them with commas inside the quotes, for example:
+
+```console
+$ cargo run --bin airnope-bench "airdop spam" "generic spam, crypto airdrop offer"
+```
+
 ## Before opening a PR
 
 Make sure these checks pass:
