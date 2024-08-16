@@ -74,12 +74,12 @@ pub async fn download() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::zsc::LABEL;
+    use crate::zsc::LABELS;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_embeddings_for() {
         let model = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
-        let got = embeddings_for(model, LABEL).await;
+        let got = embeddings_for(model, LABELS[0]).await;
         assert!(got.is_ok(), "expected no error, got {:?}", got);
 
         let vector = got.unwrap();

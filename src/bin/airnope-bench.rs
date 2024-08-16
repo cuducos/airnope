@@ -1,28 +1,35 @@
 use acap::cos::cosine_distance;
-use airnope::embeddings::embeddings_for;
-use airnope::embeddings::Embeddings;
-use airnope::embeddings::EMBEDDINGS_SIZE;
-use airnope::zsc::LABEL;
-use airnope::zsc::THRESHOLD;
+use airnope::{
+    embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE},
+    zsc::{LABELS, THRESHOLD},
+};
 use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
-use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use futures::future::try_join_all;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use tokio::sync::Mutex;
 
+#[derive(Clone)]
 struct Input {
-    label: String,
-    vector: [f32; EMBEDDINGS_SIZE],
+    labels: Vec<String>,
+    vectors: Vec<[f32; EMBEDDINGS_SIZE]>,
 }
 
 impl Input {
-    async fn new(embeddings: &Arc<Mutex<Embeddings>>, text: &str) -> Result<Self> {
-        Ok(Self {
-            label: text.to_string(),
-            vector: embeddings_for(embeddings.clone(), text).await?,
-        })
+    async fn new(embeddings: &Arc<Mutex<Embeddings>>, labels: Vec<String>) -> Result<Self> {
+        let vectors = try_join_all(
+            labels
+                .iter()
+                .map(|txt| embeddings_for(embeddings.clone(), txt.as_str()))
+                .collect::<Vec<_>>(),
+        )
+        .await?;
+        Ok(Self { labels, vectors })
     }
 
     fn to_string(&self, idx: usize) -> String {
@@ -31,8 +38,7 @@ impl Input {
         } else {
             format!("Alternative {}", idx)
         };
-        let base = format!("\n==> {}: {}", prefix, self.label);
-
+        let base = format!("\n==> {}: {}", prefix, self.labels.join(" + "));
         if idx == 0 {
             format!("{} (threshold: {:.2})", base, THRESHOLD)
         } else {
@@ -63,17 +69,28 @@ impl Task {
 }
 
 struct Evaluation {
+    scores: Vec<f32>,
     score: f32,
     expected: bool,
 }
 
 impl Evaluation {
-    async fn new(embeddings: &Arc<Mutex<Embeddings>>, task: &Task, input: &Input) -> Result<Self> {
-        let vector = embeddings_for(embeddings.clone(), task.content.as_str()).await?;
-        let score = cosine_distance(vector.to_vec(), input.vector.to_vec());
+    async fn new(embeddings: &Arc<Mutex<Embeddings>>, task: &Task, input: Input) -> Result<Self> {
+        let message = embeddings_for(embeddings.clone(), task.content.as_str()).await?;
+        let scores: Vec<f32> = input
+            .vectors
+            .into_par_iter()
+            .map(|label| cosine_distance(label.to_vec(), message.to_vec()))
+            .collect();
+
+        let score = scores.iter().sum::<f32>() / scores.len() as f32;
         let is_spam = score > THRESHOLD;
         let expected = task.is_spam == is_spam;
-        Ok(Self { score, expected })
+        Ok(Self {
+            scores,
+            score,
+            expected,
+        })
     }
 
     fn to_string(&self, task: &Task) -> String {
@@ -86,10 +103,22 @@ impl Evaluation {
         } else {
             " "
         };
-        format!(
+        let mut output = format!(
             "    {} {: <13} {:.3} ({}{:.3})",
             mark, task.name, self.score, prefix, diff
-        )
+        );
+        if self.scores.len() > 1 {
+            output = format!(
+                "{} {}",
+                output,
+                self.scores
+                    .iter()
+                    .map(|&score| format!("{:.3}", score))
+                    .collect::<Vec<String>>()
+                    .join(" | ")
+            );
+        }
+        output
     }
 }
 
@@ -111,19 +140,24 @@ fn paths() -> Result<Vec<PathBuf>> {
     Ok(paths)
 }
 
-fn labels() -> Result<Vec<String>> {
-    let mut args: Vec<String> = env::args().collect();
+fn labels() -> Result<Vec<Vec<String>>> {
+    let args: Vec<String> = env::args().collect();
     let start = match args.iter().position(|arg| arg.contains("airnope")) {
         Some(idx) => idx,
         None => {
-            return Err(anyhow!("Could not find --bench flag"));
+            return Err(anyhow!("Usage: airnope-bench <label1> [label2] ..."));
         }
     };
-    args[start] = LABEL.to_string();
-    let labels = &args[start..];
-    if labels.len() < 2 {
+    if args[start..].is_empty() {
         return Err(anyhow!("Usage: airnope-bench <label1> [label2] ...",));
     }
+    let mut labels = vec![LABELS.into_iter().map(|label| label.to_string()).collect()];
+    labels.extend(
+        args[start..]
+            .iter()
+            .map(|label| vec![label.clone()])
+            .collect::<Vec<_>>(),
+    );
     Ok(labels.to_vec())
 }
 
@@ -134,12 +168,12 @@ async fn main() -> Result<()> {
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();
     for (idx, label) in labels.iter().enumerate() {
-        let input = Input::new(&embeddings, label).await?;
+        let input = Input::new(&embeddings, label.clone()).await?;
         println!("{}", input.to_string(idx).blue().bold());
         let mut scores: Vec<f32> = vec![];
         for path in paths.iter() {
             let task = Task::new(path)?;
-            let evaluation = Evaluation::new(&embeddings, &task, &input).await?;
+            let evaluation = Evaluation::new(&embeddings, &task, input.clone()).await?;
             let line = evaluation.to_string(&task);
             println!(
                 "{}",

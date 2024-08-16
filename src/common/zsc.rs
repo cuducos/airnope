@@ -1,27 +1,32 @@
-use std::sync::Arc;
-
 use crate::embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE};
 use acap::cos::cosine_distance;
 use anyhow::Result;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
-pub const LABEL: &str = "claim crypto airdrop spam";
+pub const LABELS: [&str; 1] = ["claim crypto airdrop spam"];
 pub const THRESHOLD: f32 = 0.5;
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
-    vector: [f32; EMBEDDINGS_SIZE],
+    vectors: [[f32; EMBEDDINGS_SIZE]; LABELS.len()],
 }
 
 impl ZeroShotClassification {
     pub async fn new(embeddings: &Arc<Mutex<Embeddings>>) -> Result<Self> {
-        let vector = embeddings_for(Arc::clone(embeddings), LABEL).await?;
-        Ok(Self { vector })
+        let vectors = [embeddings_for(Arc::clone(embeddings), LABELS[0]).await?];
+        Ok(Self { vectors })
     }
 
     pub async fn score(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<f32> {
         let vector = embeddings_for(Arc::clone(embeddings), txt).await?;
-        Ok(cosine_distance(vector.to_vec(), self.vector.to_vec()))
+        let total = self
+            .vectors
+            .into_par_iter()
+            .map(|label| cosine_distance(label.to_vec(), vector.to_vec()))
+            .sum::<f32>();
+        Ok(total / self.vectors.len() as f32)
     }
 
     pub async fn is_spam(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<bool> {
