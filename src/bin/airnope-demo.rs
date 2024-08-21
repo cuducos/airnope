@@ -4,19 +4,14 @@ use actix_web::{
     App, Error, HttpRequest, HttpResponse, HttpServer,
 };
 use airnope::{embeddings::Embeddings, is_spam};
-use dashmap::DashMap;
+use moka::future::Cache;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::{
-    spawn,
-    sync::Mutex,
-    time::{sleep, Duration, Instant},
-};
+use tokio::{sync::Mutex, time::Duration};
 
 const LIMIT: Duration = Duration::from_secs(5);
-const CLEAN_UP_EVERY: Duration = Duration::from_secs(60);
 const DEFAULT_IP: &str = "0.0.0.0";
 
 #[derive(Deserialize)]
@@ -29,18 +24,10 @@ struct Response {
     spam: bool,
 }
 
-async fn clean_up_ips(ips: Arc<DashMap<String, Instant>>) {
-    loop {
-        sleep(CLEAN_UP_EVERY).await;
-        let now = Instant::now();
-        ips.retain(|_, t| now.duration_since(*t) < LIMIT);
-    }
-}
-
 async fn handle_request(
     request: HttpRequest,
     payload: Result<Json<Payload>, Error>,
-    ips: Data<Arc<DashMap<String, Instant>>>,
+    cache: Data<Cache<String, bool>>,
     embeddings: Data<Arc<Mutex<Embeddings>>>,
 ) -> actix_web::Result<HttpResponse, Error> {
     let ip = request
@@ -48,13 +35,10 @@ async fn handle_request(
         .realip_remote_addr()
         .unwrap_or(DEFAULT_IP)
         .to_string();
-    if let Some(last) = ips.get(&ip) {
-        let now = Instant::now();
-        if now.duration_since(*last) < LIMIT {
-            return Ok(HttpResponse::TooManyRequests().body(""));
-        }
+    if cache.get(&ip).await.is_some() {
+        return Ok(HttpResponse::TooManyRequests().body(""));
     }
-    ips.insert(ip, Instant::now());
+    cache.insert(ip, true).await;
     match payload {
         Ok(data) => match is_spam(&embeddings, &data.message).await {
             Ok(spam) => Ok(HttpResponse::Ok().json(Response { spam })),
@@ -73,12 +57,11 @@ async fn handle_request(
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     pretty_env_logger::init(); // based on RUST_LOG environment variable
-    let ips: Arc<DashMap<String, Instant>> = Arc::new(DashMap::new());
     let port: u16 = env::var("PORT")
         .unwrap_or_else(|_| "24601".to_string())
         .parse()?;
+    let cache: Cache<String, bool> = Cache::builder().time_to_live(LIMIT).build();
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
-    spawn(clean_up_ips(Arc::clone(&ips)));
     log::info!(
         "Starting AirNope web API on https://{}:{}",
         DEFAULT_IP,
@@ -86,8 +69,8 @@ async fn main() -> anyhow::Result<()> {
     );
     Ok(HttpServer::new(move || {
         App::new()
+            .app_data(Data::new(cache.clone()))
             .app_data(Data::new(Arc::clone(&embeddings)))
-            .app_data(Data::new(Arc::clone(&ips)))
             .wrap(
                 Cors::default()
                     .allow_any_method()

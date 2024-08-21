@@ -9,7 +9,6 @@ actix-cors = "0.7.0"
 actix-web = "4.8.0"
 anyhow = "1.0.86"
 colored = "2.1.0"
-dashmap = "6.0.1"
 futures = "0.3.30"
 log = "0.4.22"
 moka = { version = "0.12.8", features = ["future"] }
