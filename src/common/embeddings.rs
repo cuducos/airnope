@@ -1,29 +1,27 @@
 use anyhow::{anyhow, Result};
-use lru::LruCache;
+use moka::future::Cache;
 use rust_bert::pipelines::sentence_embeddings::{
     SentenceEmbeddingsConfig, SentenceEmbeddingsModel, SentenceEmbeddingsModelType,
 };
-use std::{num::NonZeroUsize, sync::Arc};
+use std::sync::Arc;
 use tokio::{sync::Mutex, task::block_in_place};
 
 pub const EMBEDDINGS_SIZE: usize = 384;
 
 pub struct Embeddings {
     model: SentenceEmbeddingsModel,
-    cache: LruCache<Vec<u8>, [f32; EMBEDDINGS_SIZE]>,
+    cache: Cache<Vec<u8>, [f32; EMBEDDINGS_SIZE]>,
 }
 
 impl Embeddings {
     pub async fn new() -> Result<Self> {
         let config = SentenceEmbeddingsConfig::from(SentenceEmbeddingsModelType::AllMiniLmL6V2);
         let model = block_in_place(|| SentenceEmbeddingsModel::new(config))?;
-        let cache = LruCache::new(
-            NonZeroUsize::new(1024).ok_or(anyhow!("Could not create LRU cache size"))?,
-        );
+        let cache = Cache::new(2_048);
         Ok(Self { model, cache })
     }
 
-    fn calculate_from_model(
+    async fn calculate_from_model(
         &mut self,
         cache_key: Vec<u8>,
         text: &str,
@@ -44,15 +42,15 @@ impl Embeddings {
         for (idx, num) in vector.iter().enumerate() {
             result[idx] = *num;
         }
-        self.cache.put(cache_key, result);
+        self.cache.clone().insert(cache_key, result).await;
         Ok(result)
     }
 
-    fn create(&mut self, text: &str) -> Result<[f32; EMBEDDINGS_SIZE]> {
+    async fn create(&mut self, text: &str) -> Result<[f32; EMBEDDINGS_SIZE]> {
         let cache_key = text.as_bytes().to_vec();
-        let result = match self.cache.get(&cache_key) {
-            Some(v) => *v,
-            None => self.calculate_from_model(cache_key, text)?,
+        let result = match self.cache.clone().get(&cache_key).await {
+            Some(v) => v,
+            None => self.calculate_from_model(cache_key, text).await?,
         };
         Ok(result)
     }
@@ -63,7 +61,7 @@ pub async fn embeddings_for(
     text: &str,
 ) -> Result<[f32; EMBEDDINGS_SIZE]> {
     let mut locked = model.lock().await;
-    locked.create(text)
+    locked.create(text).await
 }
 
 pub async fn download() -> Result<()> {
