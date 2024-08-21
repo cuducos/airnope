@@ -1,7 +1,7 @@
 use acap::cos::cosine_distance;
 use airnope::{
     embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE},
-    zsc::{LABELS, THRESHOLD},
+    zsc::{average_without_extremes, LABELS, THRESHOLD},
 };
 use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
@@ -83,7 +83,7 @@ impl Evaluation {
             .map(|label| cosine_distance(label.to_vec(), message.to_vec()))
             .collect();
 
-        let score = scores.iter().sum::<f32>() / scores.len() as f32;
+        let score = average_without_extremes(&scores);
         let is_spam = score > THRESHOLD;
         let expected = task.is_spam == is_spam;
         Ok(Self {

@@ -6,7 +6,11 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-pub const LABELS: [&str; 2] = ["claim crypto airdrop spam", "airdrop event announcement"];
+pub const LABELS: [&str; 3] = [
+    "claim crypto airdrop spam",
+    "airdrop event announcement",
+    "investment opportunity",
+];
 pub const THRESHOLD: f32 = 0.5;
 
 type LabelVectors = [[f32; EMBEDDINGS_SIZE]; LABELS.len()];
@@ -14,6 +18,23 @@ type LabelVectors = [[f32; EMBEDDINGS_SIZE]; LABELS.len()];
 #[derive(Clone)]
 pub struct ZeroShotClassification {
     vectors: LabelVectors,
+}
+
+pub fn average_without_extremes(scores: &Vec<f32>) -> f32 {
+    if scores.len() < 3 {
+        return scores.iter().sum::<f32>() / scores.len() as f32;
+    }
+    let mut min = f32::INFINITY;
+    let mut max = f32::NEG_INFINITY;
+    for score in scores {
+        if *score < min {
+            min = *score;
+        }
+        if *score > max {
+            max = *score;
+        }
+    }
+    scores.iter().sum::<f32>() - (min + max) / (scores.len() - 2) as f32
 }
 
 impl ZeroShotClassification {
@@ -33,12 +54,12 @@ impl ZeroShotClassification {
 
     pub async fn score(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<f32> {
         let vector = embeddings_for(Arc::clone(embeddings), txt).await?;
-        let total = self
+        let scores = self
             .vectors
             .into_par_iter()
             .map(|label| cosine_distance(label.to_vec(), vector.to_vec()))
-            .sum::<f32>();
-        Ok(total / self.vectors.len() as f32)
+            .collect::<Vec<f32>>();
+        Ok(average_without_extremes(&scores))
     }
 
     pub async fn is_spam(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<bool> {
