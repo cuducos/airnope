@@ -83,7 +83,7 @@ async fn webhook(
     let host = match env::var("HOST") {
         Ok(h) => h,
         Err(_) => {
-            return Err(anyhow::anyhow!("No HOST_NAME environment variable set."));
+            return Err(anyhow::anyhow!("No HOST environment variable set."));
         }
     };
     let opts = webhooks::Options::new(
