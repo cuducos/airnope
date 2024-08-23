@@ -38,7 +38,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Deploy
+      - name: Deploy demo API
         env:
-          url: ${{ secrets.RENDER_DEPLOY_WEBHOOK }}
+          url: ${{ secrets.API_DEPLOY_WEBHOOK }}
+        run: curl "$url"
+
+      - name: Deploy bot
+        env:
+          url: ${{ secrets.BOT_DEPLOY_WEBHOOK }}
         run: curl "$url"
