@@ -17,5 +17,5 @@ rayon = "1.10.0"
 regex = "1.10.5"
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 serde = "1.0.205"
-teloxide = { version = "0.12.2", features = ["ctrlc_handler"] }
+teloxide = { version = "0.12.2", features = ["ctrlc_handler", "webhooks-axum"] }
 tokio = { version = "1.39.2", features = ["rt-multi-thread", "macros", "fs", "rt"] }

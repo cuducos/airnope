@@ -1,9 +1,10 @@
 use airnope::embeddings;
 use airnope::telegram;
+use airnope::telegram::AirNope;
 use anyhow::{anyhow, Result};
 use std::env;
 
-const HELP: &str = "Usage: airnope [ --only-download-model ]";
+const HELP: &str = "Usage: airnope [ --only-download-model | --web ]";
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
@@ -12,11 +13,15 @@ async fn main() -> Result<()> {
     if args.len() > 2 {
         return Err(anyhow!(HELP));
     }
+    let mut mode = AirNope::LongPooling;
     if args.len() == 2 {
         match args[1].as_str() {
             "--only-download-model" => return embeddings::download().await,
+            "--web" => {
+                mode = AirNope::Webhook;
+            }
             unknown => return Err(anyhow!("Unknown option: {}\n{}", unknown, HELP)),
         }
     }
-    telegram::run().await
+    telegram::run(mode).await
 }

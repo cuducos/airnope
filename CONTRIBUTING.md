@@ -7,11 +7,19 @@
 
 ## Running the bot
 
-To avoid attackers trying to bring the server down, this bot does not use a webhook strategy. To start the daemon, run:
+To run it using the [long pooling strategy](https://core.telegram.org/bots/api#getupdates):
 
 ```console
-$ cargo run
+$ cargo run --bin airnope
 ```
+
+To run it as a webhook, set the `HOST` environment variable and run it with `--web`:
+
+```console
+$ HOST=bot.mydomain.etc cargo run --bin airnope -- --web
+```
+
+During the start up, AirNope register the webhook info with Telegram servers. During a graceful shutdown, AirNope [removes the webhook](https://core.telegram.org/bots/api#deletewebhook) from Telegram servers, so you can go back to long pooling if needed.
 
 ## Running the REPL
 
