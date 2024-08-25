@@ -7,19 +7,19 @@
 
 ## Running the bot
 
-To run it using the [long pooling strategy](https://core.telegram.org/bots/api#getupdates):
+The bot can be ran as a webhook or using the [long pooling strategy](https://core.telegram.org/bots/api#getupdates):
 
 ```console
-$ cargo run --bin airnope
+$ cargo run --bin airnope -- --web  # webhook
+$ cargo run --bin airnope -- --pool  # long pooling
 ```
 
-To run it as a webhook, set the `HOST` environment variable and run it with `--web`:
+If no flag `--web` or `--pool` is passed:
 
-```console
-$ HOST=bot.mydomain.etc cargo run --bin airnope -- --web
-```
+* It starts as a webhook if both `PORT` and `HOST` environment variables are set
+* It starts using the long pooling strategy otherwise
 
-During the start up, AirNope register the webhook info with Telegram servers. During a graceful shutdown, AirNope [removes the webhook](https://core.telegram.org/bots/api#deletewebhook) from Telegram servers, so you can go back to long pooling if needed.
+When running as webhook, AirNope register its URL (and secret token) with Telegram servers. During a graceful shutdown, AirNope [removes the webhook](https://core.telegram.org/bots/api#deletewebhook) from Telegram servers, so you can go back to long pooling if needed.
 
 ## Running the REPL
 
