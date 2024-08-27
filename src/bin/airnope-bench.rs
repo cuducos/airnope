@@ -142,8 +142,8 @@ fn paths() -> Result<Vec<PathBuf>> {
 
 fn labels() -> Result<Vec<Vec<String>>> {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        return Err(anyhow!("Usage: airnope-bench <label1> [label2] ...",));
+    if args.is_empty() {
+        return Err(anyhow!("Usage: airnope-bench [label1] [label2] ...",));
     }
     let mut labels = vec![LABELS.into_iter().map(|label| label.to_string()).collect()];
     labels.extend(

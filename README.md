@@ -8,14 +8,15 @@ A simple, silent bot that keeps [Telegram](https://telegram.org/) groups free fr
 
 When the user posting the message is **not** one of the group admins or the group owner:
 
- * deletes the message that are probably airdrop spam
- * removes the user who posted it from the group
+ * deletes the message that is probably airdrop spam
+ * removes from the group the user who posted it
 
 ```mermaid
-flowchart LR
+flowchart TB
 
-MSG[Message] --> RE("Has the word “airdrop”?
-including many character variants")
+MSG[Message] --> RE("Has the word “airdrop”
+including many character variants,
+or the words “token” and “wallet”?")
 
 RE-->|Yes| ZSC("Zero-shot classifier
 compares it with spam labels")

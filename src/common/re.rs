@@ -10,12 +10,12 @@ const P: &str = "[рpρϱ🅿️🇵]";
 
 #[derive(Clone)]
 pub struct RegularExpression {
-    pattern: Regex,
+    patterns: [Regex; 2],
 }
 
 impl RegularExpression {
     pub async fn new() -> Result<Self> {
-        let pattern = RegexBuilder::new(
+        let airdrop = RegexBuilder::new(
             [A, I, R, D, R, O, P]
                 .map(|s| s.to_string())
                 .join(r"\s?")
@@ -23,12 +23,22 @@ impl RegularExpression {
         )
         .case_insensitive(true)
         .build()?;
+        let token_and_wallet = RegexBuilder::new(r"token.*wallet|wallet.*token")
+            .case_insensitive(true)
+            .build()?;
+        let patterns = [airdrop, token_and_wallet];
 
-        Ok(Self { pattern })
+        Ok(Self { patterns })
     }
 
     pub async fn is_spam(&self, txt: &str) -> Result<bool> {
-        let result = self.pattern.is_match(txt);
+        let mut result = false;
+        for pattern in &self.patterns {
+            if pattern.is_match(txt) {
+                result = true;
+                break;
+            }
+        }
         if result {
             log::debug!("Message detected as spam by RegularExpression: {:?}", txt);
         }
