@@ -72,7 +72,7 @@ Alternatively, you can use [Docker](https://docs.docker.com/get-started/) and yo
 
 ```console
 $ docker pull ghcr.io/cuducos/airnope:main
-$ docker run -it -e RUST_LOG="info,airnope=debug" ghcr.io/cuducos/airnope:main airnope-repl
+$ docker run --rm -it ghcr.io/cuducos/airnope:main airnope repl
 ```
 
 ### Can I run my own instance of AirNope?

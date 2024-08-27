@@ -102,6 +102,10 @@ mod tests {
             ("🇦 🇮 🇷 🇩 🇷 🇴 🇵", true), // with special characters and spaces
             ("42", false),
             ("", false),
+            ("token", false),
+            ("wallet", false),
+            ("get your wallet and fill it with free tokens", true),
+            ("win many tokens for your new wallet", true),
         ];
         for (word, expected) in test_cases {
             for w in [word, word.to_uppercase().as_str()] {

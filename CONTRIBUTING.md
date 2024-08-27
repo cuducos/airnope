@@ -10,11 +10,11 @@
 The bot can be ran as a webhook or using the [long pooling strategy](https://core.telegram.org/bots/api#getupdates):
 
 ```console
-$ cargo run --bin airnope -- --web  # webhook
-$ cargo run --bin airnope -- --pool  # long pooling
+$ cargo run -- bot --mode webhook
+$ cargo run -- bot --mode long-pooling
 ```
 
-If no flag `--web` or `--pool` is passed:
+If there is no flag `--mode`:
 
 * It starts as a webhook if both `PORT` and `HOST` environment variables are set
 * It starts using the long pooling strategy otherwise
@@ -26,7 +26,7 @@ When running as webhook, AirNope register its URL (and secret token) with Telegr
 For developing and manual testing, there is a [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop). No Telegram token is required. Set the environment variable `RUST_LOG` to `airnope=debug` to see extra information.
 
 ```console
-$ cargo run --bin airnope-repl
+$ cargo run -- repl
 ```
 
 ## Playing with the zero-shot classifier
@@ -34,9 +34,7 @@ $ cargo run --bin airnope-repl
 This classifier is based on a label, which is a constant in AirNope. You can benchmark alternative labels with the option `--bench` and passing alternative labels, for example:
 
 ```console
-$ cargo run --bin airnope-bench "airdop spam" "generic spam offering crypto airdrop"
-    Finished dev [unoptimized + debuginfo] target(s) in 0.32s
-     Running `target/debug/airnope --bench 'airdop spam' 'generic spam offering crypto airdrop' 'crypto airdrop claim spam' 'crypto airdrop spam'`
+$ cargo run -- bench "airdop spam" "generic spam offering crypto airdrop"
 
 ==> Reference: crypto airdrop spam message (threshold: 0.55)
     ✔ not_spam1.txt 0.445 (-0.105)

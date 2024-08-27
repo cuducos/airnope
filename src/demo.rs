@@ -54,9 +54,7 @@ async fn handle_request(
     }
 }
 
-#[tokio::main(flavor = "multi_thread")]
-async fn main() -> anyhow::Result<()> {
-    pretty_env_logger::init(); // based on RUST_LOG environment variable
+pub async fn run() -> anyhow::Result<()> {
     let port: u16 = env::var("PORT")
         .unwrap_or_else(|_| "24601".to_string())
         .parse()?;

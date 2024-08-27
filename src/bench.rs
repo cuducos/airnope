@@ -8,7 +8,7 @@ use colored::Colorize;
 use futures::future::try_join_all;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{
-    env, fs,
+    fs,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -140,25 +140,18 @@ fn paths() -> Result<Vec<PathBuf>> {
     Ok(paths)
 }
 
-fn labels() -> Result<Vec<Vec<String>>> {
-    let args: Vec<String> = env::args().collect();
-    if args.is_empty() {
-        return Err(anyhow!("Usage: airnope-bench [label1] [label2] ...",));
-    }
+fn labels(args: Vec<String>) -> Result<Vec<Vec<String>>> {
     let mut labels = vec![LABELS.into_iter().map(|label| label.to_string()).collect()];
     labels.extend(
-        args[1..]
-            .iter()
+        args.iter()
             .map(|label| label.split(',').map(|val| val.trim().to_string()).collect())
             .collect::<Vec<_>>(),
     );
     Ok(labels.to_vec())
 }
 
-#[tokio::main(flavor = "multi_thread")]
-async fn main() -> Result<()> {
-    pretty_env_logger::init(); // based on RUST_LOG environment variable
-    let labels = labels()?;
+pub async fn run(args: Vec<String>) -> Result<()> {
+    let labels = labels(args)?;
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();
     for (idx, label) in labels.iter().enumerate() {

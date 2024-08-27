@@ -1,41 +1,53 @@
-use airnope::embeddings;
-use airnope::telegram;
-use airnope::telegram::AirNope;
-use anyhow::{anyhow, Result};
+use airnope::{embeddings, telegram, telegram::AirNope};
+use anyhow::Result;
+use clap::Parser;
+use cli::{Cli, Commands};
 use std::env;
 
-const HELP: &str = "Usage: airnope [ --only-download-model | --web | --pool ]";
+mod bench;
+mod cli;
+mod demo;
+mod repl;
 
-fn detect_mode(args: Vec<String>) -> AirNope {
-    match args.get(1).map(|s| s.as_str()) {
-        Some("--pool") => AirNope::LongPooling,
-        Some("--web") => AirNope::Webhook,
-        _ => {
-            if env::var("HOST").is_ok() && env::var("PORT").is_ok() {
-                log::info!("HOST and PORT are set, so using `--web`");
-                AirNope::Webhook
-            } else {
-                AirNope::LongPooling
-            }
-        }
+const DEFAULT_LOG_LEVEL: &str = "INFO";
+
+fn init_log() -> Result<()> {
+    let mut default_used = false;
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", DEFAULT_LOG_LEVEL);
+        default_used = true;
+    }
+    pretty_env_logger::init();
+    if default_used {
+        log::info!(
+            "No RUST_LOG environment variable found, using default log level: {}",
+            DEFAULT_LOG_LEVEL
+        );
+    }
+    Ok(())
+}
+
+fn detect_mode(arg: Option<AirNope>) -> AirNope {
+    if let Some(mode) = arg {
+        return mode;
+    }
+    if env::var("HOST").is_ok() && env::var("PORT").is_ok() {
+        log::info!("HOST and PORT are set, so using `--web`");
+        AirNope::Webhook
+    } else {
+        AirNope::LongPooling
     }
 }
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
-    pretty_env_logger::init(); // based on RUST_LOG environment variable
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 2 {
-        return Err(anyhow!(HELP));
+    init_log()?;
+    let args = Cli::parse();
+    match args.command {
+        Commands::Bot { mode } => telegram::run(detect_mode(mode)).await,
+        Commands::Download => embeddings::download().await,
+        Commands::Repl => repl::run().await,
+        Commands::Demo => demo::run().await,
+        Commands::Bench { label } => bench::run(label).await,
     }
-    if args.len() == 2 {
-        match args[1].as_str() {
-            "--only-download-model" => return embeddings::download().await,
-            "--pool" => (),
-            "--web" => (),
-            unknown => return Err(anyhow!("Unknown option: {}\n{}", unknown, HELP)),
-        }
-    }
-    let mode = detect_mode(args);
-    telegram::run(mode).await
 }

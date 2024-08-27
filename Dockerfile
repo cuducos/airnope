@@ -30,7 +30,7 @@ RUN apt-get clean && \
     apt-get install -y ${BUILD_PKGS} && \
     cargo install --path . && \
     cargo clean && \
-    airnope --only-download-model && \
+    airnope download && \
     apt-get -y purge ${BUILD_PKGS} && \
     apt-get -y autoremove && \
     rm -rf /var/lib/apt/lists/*
@@ -50,4 +50,4 @@ COPY --from=libtorch /usr/src/libtorch ${LIBTORCH}
 COPY --from=build /usr/local/cargo/bin/airnope* /usr/local/bin/
 COPY --from=build /root/.cache/.rustbert /root/.cache/.rustbert
 
-CMD ["airnope"]
+CMD ["airnope", "bot"]

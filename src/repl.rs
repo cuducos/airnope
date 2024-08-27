@@ -20,9 +20,7 @@ fn capture_input() -> Result<String> {
     Ok(input)
 }
 
-#[tokio::main(flavor = "multi_thread")]
-pub async fn main() -> Result<()> {
-    pretty_env_logger::init(); // based on RUST_LOG environment variable
+pub async fn run() -> Result<()> {
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     println!("Type `exit` to quit.");
     loop {

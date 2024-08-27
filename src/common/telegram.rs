@@ -1,5 +1,6 @@
 use crate::embeddings::Embeddings;
 use anyhow::Result;
+use clap::ValueEnum;
 use std::{env, sync::Arc};
 use teloxide::{
     dispatching::{DefaultKey, UpdateFilterExt},
@@ -15,6 +16,7 @@ use tokio::sync::Mutex;
 const DEFAULT_PORT: u16 = 8000;
 const DEFAULT_HOST_IP: [u8; 4] = [0, 0, 0, 0];
 
+#[derive(Clone, Debug, ValueEnum)]
 pub enum AirNope {
     LongPooling,
     Webhook,
