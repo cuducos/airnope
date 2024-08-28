@@ -32,7 +32,7 @@ fn detect_mode(arg: Option<AirNope>) -> AirNope {
         return mode;
     }
     if env::var("HOST").is_ok() && env::var("PORT").is_ok() {
-        log::info!("HOST and PORT are set, so using `--web`");
+        log::info!("HOST and PORT are set, so starting as webhook server");
         AirNope::Webhook
     } else {
         AirNope::LongPooling
