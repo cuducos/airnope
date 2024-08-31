@@ -1,4 +1,7 @@
-use crate::embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE};
+use crate::{
+    embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE},
+    truncated,
+};
 use acap::cos::cosine_distance;
 use anyhow::Result;
 use futures::future::try_join_all;
@@ -66,11 +69,11 @@ impl ZeroShotClassification {
         let score = self.score(embeddings, txt).await?;
         let result = score > THRESHOLD;
         if result {
-            log::debug!(
-                "Message detected as spam by ZeroShotClassification (score = {:?}): {:?}",
+            log::info!(
+                "Message detected as spam by ZeroShotClassification (score = {})",
                 score,
-                txt,
             );
+            log::debug!("{}", truncated(txt));
         }
         Ok(result)
     }

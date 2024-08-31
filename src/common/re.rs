@@ -1,3 +1,4 @@
+use crate::truncated;
 use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 
@@ -40,7 +41,8 @@ impl RegularExpression {
             }
         }
         if result {
-            log::debug!("Message detected as spam by RegularExpression: {:?}", txt);
+            log::info!("Message detected as spam by RegularExpression");
+            log::debug!("{}", truncated(txt));
         }
         Ok(result)
     }
