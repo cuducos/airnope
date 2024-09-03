@@ -10,6 +10,7 @@ actix-web = "4.9.0"
 anyhow = "1.0.86"
 clap = { version = "4.5.16", features = ["derive"] }
 colored = "2.1.0"
+dirs = "5.0.1"
 dotenv = "0.15.0"
 futures = "0.3.30"
 log = "0.4.22"
@@ -21,3 +22,4 @@ rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 serde = "1.0.209"
 teloxide = { version = "0.13.0", features = ["ctrlc_handler", "webhooks-axum"] }
 tokio = { version = "1.40.0", features = ["rt-multi-thread", "macros", "fs", "rt"] }
+walkdir = "2.5.0"

@@ -1,5 +1,6 @@
 use acap::cos::cosine_distance;
 use airnope::{
+    common::summary::{summary_for, Summarizer},
     embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE},
     zsc::{average_without_extremes, LABELS, THRESHOLD},
 };
@@ -18,6 +19,8 @@ use tokio::sync::Mutex;
 struct Input {
     labels: Vec<String>,
     vectors: Vec<[f32; EMBEDDINGS_SIZE]>,
+    not_spam_scores: Vec<f32>,
+    spam_scores: Vec<f32>,
 }
 
 impl Input {
@@ -29,7 +32,12 @@ impl Input {
                 .collect::<Vec<_>>(),
         )
         .await?;
-        Ok(Self { labels, vectors })
+        Ok(Self {
+            labels,
+            vectors,
+            not_spam_scores: vec![],
+            spam_scores: vec![],
+        })
     }
 
     fn to_string(&self, idx: usize) -> String {
@@ -44,6 +52,46 @@ impl Input {
         } else {
             base
         }
+    }
+
+    fn push(&mut self, path: &Path, score: f32) -> Result<()> {
+        let name = match path.file_name() {
+            Some(n) => n.to_string_lossy().to_string(),
+            None => return Err(anyhow!("Could not get file name")),
+        };
+        if name.starts_with("spam") {
+            self.spam_scores.push(score);
+        } else {
+            self.not_spam_scores.push(score);
+        }
+        Ok(())
+    }
+
+    fn stats(&self) {
+        let not_spam = self
+            .not_spam_scores
+            .iter()
+            .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+        let spam = self
+            .spam_scores
+            .iter()
+            .fold(f32::INFINITY, |a, &b| a.min(b));
+        let output = if not_spam > spam {
+            format!(
+                "\n     No possible threshold (maximum not spam = {:.3} and minimum spam = {:.3})",
+                not_spam, spam
+            )
+            .bold()
+            .yellow()
+        } else {
+            format!(
+                "\n     Possible threshold between {:.3} and {:.3}",
+                not_spam, spam
+            )
+            .bold()
+            .green()
+        };
+        println!("{}", output);
     }
 }
 
@@ -75,12 +123,21 @@ struct Evaluation {
 }
 
 impl Evaluation {
-    async fn new(embeddings: &Arc<Mutex<Embeddings>>, task: &Task, input: Input) -> Result<Self> {
-        let message = embeddings_for(embeddings.clone(), task.content.as_str()).await?;
+    async fn new(
+        embeddings: &Arc<Mutex<Embeddings>>,
+        summarizer: Option<&Arc<Mutex<Summarizer>>>,
+        task: &Task,
+        input: Input,
+    ) -> Result<Self> {
+        let text = match summarizer {
+            Some(model) => summary_for(model.clone(), task.content.as_str()).await?,
+            None => task.content.clone(),
+        };
+        let embeddings = embeddings_for(embeddings.clone(), text.as_str()).await?;
         let scores: Vec<f32> = input
             .vectors
             .into_par_iter()
-            .map(|label| cosine_distance(label.to_vec(), message.to_vec()))
+            .map(|label| cosine_distance(label.to_vec(), embeddings.to_vec()))
             .collect();
 
         let score = average_without_extremes(&scores);
@@ -150,28 +207,74 @@ fn labels(args: Vec<String>) -> Result<Vec<Vec<String>>> {
     Ok(labels.to_vec())
 }
 
-pub async fn run(args: Vec<String>) -> Result<()> {
+async fn simulate(
+    embeddings: Arc<Mutex<Embeddings>>,
+    sumamrizer: Arc<Mutex<Summarizer>>,
+    skip_summary: bool,
+    threshold_difference: f32,
+    input: Input,
+    path: &PathBuf,
+) -> Result<f32> {
+    let task = Task::new(path)?;
+    let mut summarized = false;
+    let mut score_without_summarizing = 0.0;
+    let mut evaluation = Evaluation::new(&embeddings, None, &task, input.clone()).await?;
+    if !skip_summary
+        && THRESHOLD - threshold_difference < evaluation.score
+        && evaluation.score < THRESHOLD + threshold_difference
+    {
+        score_without_summarizing = evaluation.score;
+        evaluation = Evaluation::new(&embeddings, Some(&sumamrizer), &task, input.clone()).await?;
+        summarized = true;
+    }
+    let line = evaluation.to_string(&task);
+    println!(
+        "{}{}",
+        if evaluation.expected {
+            line.green()
+        } else {
+            line.red()
+        },
+        if summarized {
+            let dif = evaluation.score - score_without_summarizing;
+            let sig = if dif > 0.0 {
+                "+"
+            } else if dif < 0.0 {
+                ""
+            } else {
+                " "
+            };
+            format!(" ({}{:.2} after summarizing)", sig, dif)
+        } else {
+            "".to_string()
+        }
+    );
+    Ok(evaluation.score)
+}
+
+pub async fn run(args: Vec<String>, skip_summary: bool, threshold_difference: f32) -> Result<()> {
     let labels = labels(args)?;
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();
+    let summarizer = Arc::new(Mutex::new(Summarizer::new().await?)).clone();
     for (idx, label) in labels.iter().enumerate() {
-        let input = Input::new(&embeddings, label.clone()).await?;
+        let mut input = Input::new(&embeddings, label.clone()).await?;
         println!("{}", input.to_string(idx).blue().bold());
-        let mut scores: Vec<f32> = vec![];
         for path in paths.iter() {
-            let task = Task::new(path)?;
-            let evaluation = Evaluation::new(&embeddings, &task, input.clone()).await?;
-            let line = evaluation.to_string(&task);
-            println!(
-                "{}",
-                if evaluation.expected {
-                    line.green()
-                } else {
-                    line.red()
-                }
-            );
-            scores.push(evaluation.score);
+            input.push(
+                path,
+                simulate(
+                    embeddings.clone(),
+                    summarizer.clone(),
+                    skip_summary,
+                    threshold_difference,
+                    input.clone(),
+                    path,
+                )
+                .await?,
+            )?;
         }
+        input.stats()
     }
     Ok(())
 }

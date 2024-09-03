@@ -24,20 +24,25 @@ pub struct ZeroShotClassification {
 }
 
 pub fn average_without_extremes(scores: &Vec<f32>) -> f32 {
+    if scores.is_empty() {
+        return 0.0;
+    }
     if scores.len() < 3 {
         return scores.iter().sum::<f32>() / scores.len() as f32;
     }
+    let mut sum = 0.0;
     let mut min = f32::INFINITY;
     let mut max = f32::NEG_INFINITY;
-    for score in scores {
-        if *score < min {
-            min = *score;
+    for &score in scores {
+        if score < min {
+            min = score;
         }
-        if *score > max {
-            max = *score;
+        if score > max {
+            max = score;
         }
+        sum += score;
     }
-    scores.iter().sum::<f32>() - (min + max) / (scores.len() - 2) as f32
+    (sum - (min + max)) / (scores.len() as f32 - 2.0)
 }
 
 impl ZeroShotClassification {
@@ -115,5 +120,11 @@ mod tests {
                 THRESHOLD,
             );
         }
+    }
+
+    #[test]
+    fn test_average_without_extremes() {
+        let scores = vec![1.0, 4.0, 6.0, 9.0];
+        assert_eq!(average_without_extremes(&scores), 5.0);
     }
 }

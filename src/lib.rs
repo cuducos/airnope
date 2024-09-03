@@ -1,6 +1,7 @@
 pub mod common;
 pub use common::embeddings;
 pub use common::re;
+pub use common::summary;
 pub use common::telegram;
 pub use common::zsc;
 

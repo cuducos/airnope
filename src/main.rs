@@ -1,4 +1,4 @@
-use airnope::{embeddings, telegram, telegram::AirNope};
+use airnope::{telegram, telegram::AirNope};
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Commands};
@@ -6,6 +6,7 @@ use dotenv::dotenv;
 use std::env;
 
 mod bench;
+mod cache;
 mod cli;
 mod demo;
 mod repl;
@@ -47,9 +48,14 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command {
         Commands::Bot { mode } => telegram::run(detect_mode(mode)).await,
-        Commands::Download => embeddings::download().await,
         Commands::Repl => repl::run().await,
         Commands::Demo => demo::run().await,
-        Commands::Bench { label } => bench::run(label).await,
+        Commands::Download => cache::download_all().await,
+        Commands::CleanCache { dry_run } => cache::clean_rust_bert_cache(dry_run).await,
+        Commands::Bench {
+            label,
+            skip_summary,
+            threshold_difference,
+        } => bench::run(label, skip_summary, threshold_difference).await,
     }
 }
