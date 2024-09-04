@@ -106,7 +106,8 @@ pub async fn run(mode: AirNope) -> Result<()> {
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
     let handler = Update::filter_message()
-        .branch(Update::filter_edited_message()).endpoint(
+        .branch(Update::filter_edited_message())
+        .endpoint(
             |bot: Bot, embeddings: Arc<Mutex<Embeddings>>, msg: Message| async move {
                 process_message(&bot, &embeddings, &msg).await;
                 respond(())
