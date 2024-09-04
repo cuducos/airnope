@@ -35,6 +35,8 @@ subgraph AirNope
 end
 ```
 
+If the user posting the message is the owner or an admin of the group, AirNop just rects with 👀 instead.
+
 #### What it does not do
 
 * does **not** post any message in the group (avoids pollution of the group)

@@ -7,7 +7,7 @@ use teloxide::{
     dptree,
     prelude::{Bot, Dispatcher, LoggingErrorHandler, Message, Request, Requester},
     respond,
-    types::{ChatMemberStatus, MessageKind, Update},
+    types::{ChatMemberStatus, MessageKind, ReactionType, Update},
     update_listeners::webhooks,
     RequestError,
 };
@@ -47,6 +47,17 @@ pub async fn is_admin(bot: &Bot, msg: &Message) -> bool {
     false
 }
 
+async fn react(bot: &Bot, msg: &Message) {
+    let eyes = ReactionType::Emoji {
+        emoji: "👀".to_string(),
+    };
+    let mut request = bot.set_message_reaction(msg.chat.id, msg.id);
+    request.reaction = Some(vec![eyes]);
+    if let Err(e) = request.send().await {
+        log::error!("Error reacting to spam message: {:?}", e);
+    };
+}
+
 async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &Message) {
     if let MessageKind::Common(_) = &msg.kind {
         if let Some(txt) = msg.text() {
@@ -59,6 +70,7 @@ async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &M
                 return;
             }
             if is_admin(bot, msg).await {
+                react(bot, msg).await;
                 return;
             }
             if let Err(e) = tokio::try_join!(delete_message(bot, msg), ban_user(bot, msg),) {
