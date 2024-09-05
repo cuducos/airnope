@@ -1,7 +1,7 @@
 use crate::embeddings::Embeddings;
 use anyhow::Result;
 use clap::ValueEnum;
-use std::{env, sync::Arc};
+use std::{env, sync::Arc, time::Duration};
 use teloxide::{
     dispatching::{DefaultKey, UpdateFilterExt},
     dptree,
@@ -11,7 +11,7 @@ use teloxide::{
     update_listeners::webhooks,
     RequestError,
 };
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex, time::sleep};
 use url::Url;
 
 const DEFAULT_PORT: u16 = 8000;
@@ -103,10 +103,10 @@ async fn webhook(
     };
     let url = Url::parse(format!("https://{host}/webhook").as_str())?;
     let opts =
-        webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(16);
+        webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(32);
     let mut webhook = bot.set_webhook(url);
     webhook.allowed_updates = Some(vec![AllowedUpdate::Message, AllowedUpdate::EditedMessage]);
-    webhook.send().await?;
+    sleep(Duration::from_secs(2)).await; // Teloxide also sends setWebhook, this avoids a 429-like error
     dispatcher
         .dispatch_with_listener(
             webhooks::axum(bot, opts).await?,
