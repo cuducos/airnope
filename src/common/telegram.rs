@@ -7,11 +7,12 @@ use teloxide::{
     dptree,
     prelude::{Bot, Dispatcher, LoggingErrorHandler, Message, Request, Requester},
     respond,
-    types::{ChatMemberStatus, MessageKind, ReactionType, Update},
+    types::{AllowedUpdate, ChatMemberStatus, MessageKind, ReactionType, Update},
     update_listeners::webhooks,
     RequestError,
 };
 use tokio::sync::Mutex;
+use url::Url;
 
 const DEFAULT_PORT: u16 = 8000;
 const DEFAULT_HOST_IP: [u8; 4] = [0, 0, 0, 0];
@@ -100,11 +101,12 @@ async fn webhook(
             return Err(anyhow::anyhow!("No HOST environment variable set."));
         }
     };
-    let opts = webhooks::Options::new(
-        (DEFAULT_HOST_IP, port).into(),
-        format!("https://{host}/webhook").parse()?,
-    )
-    .max_connections(16); // up to 100
+    let url = Url::parse(format!("https://{host}/webhook").as_str())?;
+    let opts =
+        webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(64);
+    let mut webhook = bot.set_webhook(url);
+    webhook.allowed_updates = Some(vec![AllowedUpdate::Message, AllowedUpdate::EditedMessage]);
+    webhook.send().await?;
     dispatcher
         .dispatch_with_listener(
             webhooks::axum(bot, opts).await?,
