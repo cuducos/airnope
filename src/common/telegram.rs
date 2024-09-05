@@ -106,6 +106,7 @@ async fn webhook(
         webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(32);
     let mut webhook = bot.set_webhook(url);
     webhook.allowed_updates = Some(vec![AllowedUpdate::Message, AllowedUpdate::EditedMessage]);
+    webhook.send().await?;
     sleep(Duration::from_secs(2)).await; // Teloxide also sends setWebhook, this avoids a 429-like error
     dispatcher
         .dispatch_with_listener(
