@@ -103,7 +103,7 @@ async fn webhook(
     };
     let url = Url::parse(format!("https://{host}/webhook").as_str())?;
     let opts =
-        webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(64);
+        webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(16);
     let mut webhook = bot.set_webhook(url);
     webhook.allowed_updates = Some(vec![AllowedUpdate::Message, AllowedUpdate::EditedMessage]);
     webhook.send().await?;
