@@ -14,12 +14,9 @@ When the user posting the message is **not** one of the group admins or the grou
 ```mermaid
 flowchart TB
 
-MSG[Message] --> RE("Has the word “airdrop”
-including many character variants,
-or the words “token” and “wallet”?")
+MSG[Message] --> RE(Detect words like “airdrop”)
 
-RE-->|Yes| ZSC("Zero-shot classifier
-compares it with spam labels")
+RE-->|Yes| ZSC(Compare to spam labels)
 ZSC-->|Looks like spam| S{{Spam}}
 S--> RU[Remove user]
 S--> RM[Remove message]
