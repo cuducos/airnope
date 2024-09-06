@@ -59,31 +59,26 @@ async fn react(bot: &Bot, msg: &Message) {
     };
 }
 
-async fn process_message(
-    bot: &Bot,
-    embeddings: &Arc<Mutex<Embeddings>>,
-    msg: &Message,
-) -> Result<(), RequestError> {
+async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &Message) {
     if let MessageKind::Common(_) = &msg.kind {
         if let Some(txt) = msg.text() {
             let result = crate::is_spam(embeddings, txt).await;
             if let Err(e) = result {
                 log::error!("Error in the pipeline: {:?}", e);
-                return respond(());
+                return;
             }
             if let Ok(false) = result {
-                return respond(());
+                return;
             }
             if is_admin(bot, msg).await {
                 react(bot, msg).await;
-                return respond(());
+                return;
             }
             if let Err(e) = tokio::try_join!(delete_message(bot, msg), ban_user(bot, msg),) {
                 log::error!("Error handling spam: {:?}", e);
             }
         }
     }
-    respond(())
 }
 
 async fn webhook(
@@ -126,8 +121,18 @@ pub async fn run(mode: AirNope) -> Result<()> {
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
     let handler = dptree::entry()
-        .branch(Update::filter_message().endpoint(process_message))
-        .branch(Update::filter_edited_message().endpoint(process_message));
+        .branch(Update::filter_message().endpoint(
+            |bot: Bot, embeddings: Arc<Mutex<Embeddings>>, msg: Message| async move {
+                process_message(&bot, &embeddings, &msg).await;
+                respond(())
+            },
+        ))
+        .branch(Update::filter_edited_message().endpoint(
+            |bot: Bot, embeddings: Arc<Mutex<Embeddings>>, msg: Message| async move {
+                process_message(&bot, &embeddings, &msg).await;
+                respond(())
+            },
+        ));
     let mut dispatcher = Dispatcher::builder(bot.clone(), handler)
         .dependencies(dptree::deps![embeddings])
         .enable_ctrlc_handler()
