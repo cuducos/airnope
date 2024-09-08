@@ -33,9 +33,10 @@ impl RegularExpression {
     }
 
     pub async fn is_spam(&self, txt: &str) -> Result<bool> {
+        let cleaned = Regex::new(r"\s")?.replace_all(txt, " ").to_string();
         let mut result = false;
         for pattern in &self.patterns {
-            if pattern.is_match(txt) {
+            if pattern.is_match(cleaned.as_str()) {
                 result = true;
                 break;
             }
@@ -108,6 +109,7 @@ mod tests {
             ("wallet", false),
             ("get your wallet and fill it with free tokens", true),
             ("win many tokens for your new wallet", true),
+            ("ask me how to get free tokens\n\nfor your wallet", true),
         ];
         for (word, expected) in test_cases {
             for w in [word, word.to_uppercase().as_str()] {

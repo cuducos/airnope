@@ -41,7 +41,7 @@ impl Input {
     }
 
     fn to_string(&self, idx: usize) -> String {
-        let prefix = format!("Alternative {}", idx+1);
+        let prefix = format!("Alternative {}", idx + 1);
         let base = format!("\n==> {}: {}", prefix, self.labels.join(" + "));
         if idx == 0 {
             format!("{} (threshold: {:.2})", base, THRESHOLD)
