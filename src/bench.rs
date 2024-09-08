@@ -41,11 +41,7 @@ impl Input {
     }
 
     fn to_string(&self, idx: usize) -> String {
-        let prefix = if idx == 0 {
-            "Reference".to_string()
-        } else {
-            format!("Alternative {}", idx)
-        };
+        let prefix = format!("Alternative {}", idx+1);
         let base = format!("\n==> {}: {}", prefix, self.labels.join(" + "));
         if idx == 0 {
             format!("{} (threshold: {:.2})", base, THRESHOLD)
@@ -197,14 +193,14 @@ fn paths() -> Result<Vec<PathBuf>> {
     Ok(paths)
 }
 
-fn labels(args: Vec<String>) -> Result<Vec<Vec<String>>> {
-    let mut labels = vec![LABELS.into_iter().map(|label| label.to_string()).collect()];
-    labels.extend(
-        args.iter()
+fn labels(args: Option<Vec<String>>) -> Vec<Vec<String>> {
+    match args {
+        None => vec![LABELS.into_iter().map(|label| label.to_string()).collect()],
+        Some(labels) => labels
+            .iter()
             .map(|label| label.split(',').map(|val| val.trim().to_string()).collect())
             .collect::<Vec<_>>(),
-    );
-    Ok(labels.to_vec())
+    }
 }
 
 async fn simulate(
@@ -252,8 +248,12 @@ async fn simulate(
     Ok(evaluation.score)
 }
 
-pub async fn run(args: Vec<String>, skip_summary: bool, threshold_difference: f32) -> Result<()> {
-    let labels = labels(args)?;
+pub async fn run(
+    args: Option<Vec<String>>,
+    skip_summary: bool,
+    threshold_difference: f32,
+) -> Result<()> {
+    let labels = labels(args);
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();
     let summarizer = Arc::new(Mutex::new(Summarizer::new().await?)).clone();

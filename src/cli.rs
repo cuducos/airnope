@@ -19,8 +19,7 @@ pub enum Commands {
     /// Runs benchmark of the zero-shot classification model (accepts labels as arguments)
     Bench {
         /// One or more label sets to benchmark  (separate different labels in a set using commas)
-        #[clap(required = true)]
-        label: Vec<String>,
+        label: Option<Vec<String>>,
 
         /// Skip summary in case the score is too close to the threshold
         #[clap(long, short)]
