@@ -24,8 +24,11 @@ fn truncated(message: &str) -> String {
     let mut msg = message.to_string();
     msg.retain(|c| !c.is_control() || c == ' ');
     msg = msg.trim().to_string();
-    if msg.len() > MESSAGE_PREVIEW_SIZE {
-        msg = msg[..(MESSAGE_PREVIEW_SIZE - 3)].to_string();
+    if msg.chars().count() > MESSAGE_PREVIEW_SIZE {
+        msg = msg
+            .chars()
+            .take(MESSAGE_PREVIEW_SIZE - 3)
+            .collect::<String>();
         msg.push_str("...");
     }
     msg
