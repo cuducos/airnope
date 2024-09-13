@@ -44,6 +44,7 @@ jobs:
         run: curl "$url"
 
       - name: Deploy bot
+        uses: superfly/flyctl-actions/setup-flyctl@master
+        run: flyctl deploy --image ghcr.io/cuducos/airnope:main
         env:
-          url: ${{ secrets.BOT_DEPLOY_WEBHOOK }}
-        run: curl "$url"
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
