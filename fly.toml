@@ -4,7 +4,6 @@ primary_region = 'ams'
 [build]
 
 [env]
-  HOST = 'airnope-bot.fly.dev'
   PORT = '8080'
 
 [http_service]
