@@ -1,11 +1,14 @@
 name: Docker image
 on:
-  push:
-    branches: ['main']
-
+  workflow_run:
+    workflows:
+      - Tests
+    types:
+      - completed
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
