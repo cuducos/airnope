@@ -24,7 +24,7 @@ impl RegularExpression {
         )
         .case_insensitive(true)
         .build()?;
-        let token_and_wallet = RegexBuilder::new(r"token.*wallet|wallet.*token")
+        let token_and_wallet = RegexBuilder::new(r"(t|Т)oken.*walle(t|Т)|walle(t|Т).*(t|Т)oken")
             .case_insensitive(true)
             .build()?;
         let patterns = [airdrop, token_and_wallet];
@@ -110,6 +110,7 @@ mod tests {
             ("get your wallet and fill it with free tokens", true),
             ("win many tokens for your new wallet", true),
             ("ask me how to get free tokens\n\nfor your wallet", true),
+            ("My walleТs have tokens", true),
         ];
         for (word, expected) in test_cases {
             for w in [word, word.to_uppercase().as_str()] {
