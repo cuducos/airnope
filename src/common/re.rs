@@ -3,44 +3,61 @@ use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 
 const A: &str = "[аa🅰🅰️🇦🇦]";
-const I: &str = "[іiI1lℹ️🇮]";
-const R: &str = "[рr🇷]";
 const D: &str = "[dԁ🇩]";
+const E: &str = "[eE3€ℯ🇪]";
+const I: &str = "[іiI1lℹ️🇮]";
+const K: &str = "[kK🇰]";
+const L: &str = "[lL1|ℓ🇱]";
+const N: &str = "[nNℕ🇳]";
 const O: &str = "[оo0🅾️🇴]";
 const P: &str = "[рpρϱ🅿️🇵]";
+const R: &str = "[рr🇷]";
+const T: &str = "[tTТ7†🇹]";
+const W: &str = "[wW🇼]";
 
 #[derive(Clone)]
 pub struct RegularExpression {
-    patterns: [Regex; 2],
+    airdrop: Regex,
+    wallet: Regex,
+    token: Regex,
+    cleanup: Regex,
+}
+
+fn to_regex<I>(chars: I) -> Result<Regex>
+where
+    I: IntoIterator,
+    I::Item: AsRef<str>,
+{
+    Ok(RegexBuilder::new(
+        chars
+            .into_iter()
+            .map(|s| s.as_ref().to_string())
+            .collect::<Vec<_>>()
+            .join(r"\s?")
+            .as_str(),
+    )
+    .case_insensitive(true)
+    .build()?)
 }
 
 impl RegularExpression {
     pub async fn new() -> Result<Self> {
-        let airdrop = RegexBuilder::new(
-            [A, I, R, D, R, O, P]
-                .map(|s| s.to_string())
-                .join(r"\s?")
-                .as_str(),
-        )
-        .case_insensitive(true)
-        .build()?;
-        let token_and_wallet = RegexBuilder::new(r"(t|Т)oken.*walle(t|Т)|walle(t|Т).*(t|Т)oken")
-            .case_insensitive(true)
-            .build()?;
-        let patterns = [airdrop, token_and_wallet];
-
-        Ok(Self { patterns })
+        let airdrop = to_regex([A, I, R, D, R, O, P])?;
+        let wallet = to_regex([W, A, L, L, E, T])?;
+        let token = to_regex([T, O, K, E, N])?;
+        let cleanup = Regex::new(r"\s")?;
+        Ok(Self {
+            airdrop,
+            wallet,
+            token,
+            cleanup,
+        })
     }
 
     pub async fn is_spam(&self, txt: &str) -> Result<bool> {
-        let cleaned = Regex::new(r"\s")?.replace_all(txt, " ").to_string();
-        let mut result = false;
-        for pattern in &self.patterns {
-            if pattern.is_match(cleaned.as_str()) {
-                result = true;
-                break;
-            }
-        }
+        let cleaned = self.cleanup.replace_all(txt, " ").to_string();
+        let result = self.airdrop.is_match(cleaned.as_str())
+            || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
