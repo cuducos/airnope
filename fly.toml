@@ -1,5 +1,6 @@
 app = 'airnope-bot'
 primary_region = 'ams'
+swap_size_mb = 512
 
 [build]
 
@@ -15,6 +16,6 @@ primary_region = 'ams'
   processes = ['app']
 
 [[vm]]
-  memory = '1gb'
+  memory = '256mb'
   cpu_kind = 'shared'
   cpus = 1
