@@ -33,3 +33,38 @@ fn truncated(message: &str) -> String {
     }
     msg
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use embeddings::Embeddings;
+    use tokio::fs;
+    use tokio::io::AsyncReadExt;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_is_spam() {
+        let embeddings = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
+        let mut entries = fs::read_dir("test_data").await.unwrap();
+        while let Some(entry) = entries.next_entry().await.unwrap() {
+            let path = entry.path();
+            let mut contents = String::new();
+            let mut file = fs::File::open(&path).await.unwrap();
+            file.read_to_string(&mut contents).await.unwrap();
+
+            let got = is_spam(&embeddings, &contents).await.unwrap();
+            let expected = path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with("spam");
+
+            assert_eq!(
+                expected,
+                got,
+                "{} was not flagged as expected",
+                path.display(),
+            );
+        }
+    }
+}

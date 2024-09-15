@@ -4,7 +4,7 @@ use regex::{Regex, RegexBuilder};
 
 const A: &str = "[аa🅰🅰️🇦🇦]";
 const D: &str = "[dԁ🇩]";
-const E: &str = "[eE3€ℯ🇪]";
+const E: &str = "[eEе3€ℯ🇪]";
 const I: &str = "[іiI1lℹ️🇮]";
 const K: &str = "[kK🇰]";
 const L: &str = "[lL1|ℓ🇱]";
@@ -69,6 +69,7 @@ impl RegularExpression {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::{fs, io::AsyncReadExt};
 
     #[tokio::test]
     async fn test_is_spam() {
@@ -124,10 +125,9 @@ mod tests {
             ("", false),
             ("token", false),
             ("wallet", false),
-            ("get your wallet and fill it with free tokens", true),
-            ("win many tokens for your new wallet", true),
-            ("ask me how to get free tokens\n\nfor your wallet", true),
-            ("My walleТs have tokens", true),
+            ("wallet tokens", true),
+            ("tokens wallet", true),
+            ("wallеt and tokеn", true), // with Cyrillic е
         ];
         for (word, expected) in test_cases {
             for w in [word, word.to_uppercase().as_str()] {
@@ -139,6 +139,20 @@ mod tests {
                     expected, w, got
                 );
             }
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_is_spam_with_test_data() {
+        let model = RegularExpression::new().await.unwrap();
+        let mut entries = fs::read_dir("test_data").await.unwrap();
+        while let Some(entry) = entries.next_entry().await.unwrap() {
+            let path = entry.path();
+            let mut contents = String::new();
+            let mut file = fs::File::open(&path).await.unwrap();
+            file.read_to_string(&mut contents).await.unwrap();
+            let got = model.is_spam(contents.as_str()).await.unwrap();
+            assert!(got, "{} was not flagged as spam", path.display(),);
         }
     }
 }
