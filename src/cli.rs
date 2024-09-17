@@ -20,14 +20,6 @@ pub enum Commands {
     Bench {
         /// One or more label sets to benchmark  (separate different labels in a set using commas)
         label: Option<Vec<String>>,
-
-        /// Skip summary in case the score is too close to the threshold
-        #[clap(long, short)]
-        skip_summary: bool,
-
-        /// Threshold difference to ask for summary instead
-        #[clap(long, short, default_value_t = 0.05)]
-        threshold_difference: f32,
     },
     /// Start the REPL for individual message testing
     Repl,

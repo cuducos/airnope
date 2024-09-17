@@ -51,11 +51,7 @@ async fn main() -> Result<()> {
         Commands::Repl => repl::run().await,
         Commands::Demo => demo::run().await,
         Commands::Download => cache::download_all().await,
+        Commands::Bench { label } => bench::run(label).await,
         Commands::CleanCache { dry_run } => cache::clean_rust_bert_cache(dry_run).await,
-        Commands::Bench {
-            label,
-            skip_summary,
-            threshold_difference,
-        } => bench::run(label, skip_summary, threshold_difference).await,
     }
 }

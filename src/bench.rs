@@ -1,13 +1,10 @@
-use acap::cos::cosine_distance;
 use airnope::{
-    common::summary::{summary_for, Summarizer},
-    embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE},
-    zsc::{average_without_extremes, LABELS, THRESHOLD},
+    embeddings::Embeddings,
+    is_spam_with_custom_classifier,
+    zsc::{ZeroShotClassification, LABELS, THRESHOLD},
 };
 use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
-use futures::future::try_join_all;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -17,24 +14,18 @@ use tokio::sync::Mutex;
 
 #[derive(Clone)]
 struct Input {
+    classifier: ZeroShotClassification,
     labels: Vec<String>,
-    vectors: Vec<[f32; EMBEDDINGS_SIZE]>,
     not_spam_scores: Vec<f32>,
     spam_scores: Vec<f32>,
 }
 
 impl Input {
     async fn new(embeddings: &Arc<Mutex<Embeddings>>, labels: Vec<String>) -> Result<Self> {
-        let vectors = try_join_all(
-            labels
-                .iter()
-                .map(|txt| embeddings_for(embeddings.clone(), txt.as_str()))
-                .collect::<Vec<_>>(),
-        )
-        .await?;
+        let classifier = ZeroShotClassification::new(embeddings, labels.clone()).await?;
         Ok(Self {
+            classifier,
             labels,
-            vectors,
             not_spam_scores: vec![],
             spam_scores: vec![],
         })
@@ -119,26 +110,13 @@ struct Evaluation {
 }
 
 impl Evaluation {
-    async fn new(
-        embeddings: &Arc<Mutex<Embeddings>>,
-        summarizer: Option<&Arc<Mutex<Summarizer>>>,
-        task: &Task,
-        input: Input,
-    ) -> Result<Self> {
-        let text = match summarizer {
-            Some(model) => summary_for(model.clone(), task.content.as_str()).await?,
-            None => task.content.clone(),
-        };
-        let embeddings = embeddings_for(embeddings.clone(), text.as_str()).await?;
-        let scores: Vec<f32> = input
-            .vectors
-            .into_par_iter()
-            .map(|label| cosine_distance(label.to_vec(), embeddings.to_vec()))
-            .collect();
-
-        let score = average_without_extremes(&scores);
-        let is_spam = score > THRESHOLD;
-        let expected = task.is_spam == is_spam;
+    async fn new(embeddings: &Arc<Mutex<Embeddings>>, task: &Task, input: Input) -> Result<Self> {
+        let result =
+            is_spam_with_custom_classifier(embeddings, input.classifier, task.content.as_str())
+                .await?;
+        let expected = task.is_spam == result.is_spam;
+        let score = result.score.unwrap_or(0.0);
+        let scores = result.scores;
         Ok(Self {
             scores,
             score,
@@ -203,75 +181,32 @@ fn labels(args: Option<Vec<String>>) -> Vec<Vec<String>> {
     }
 }
 
-async fn simulate(
-    embeddings: Arc<Mutex<Embeddings>>,
-    sumamrizer: Arc<Mutex<Summarizer>>,
-    skip_summary: bool,
-    threshold_difference: f32,
-    input: Input,
-    path: &PathBuf,
-) -> Result<f32> {
+async fn simulate(embeddings: Arc<Mutex<Embeddings>>, input: Input, path: &PathBuf) -> Result<f32> {
     let task = Task::new(path)?;
-    let mut summarized = false;
-    let mut score_without_summarizing = 0.0;
-    let mut evaluation = Evaluation::new(&embeddings, None, &task, input.clone()).await?;
-    if !skip_summary
-        && THRESHOLD - threshold_difference < evaluation.score
-        && evaluation.score < THRESHOLD + threshold_difference
-    {
-        score_without_summarizing = evaluation.score;
-        evaluation = Evaluation::new(&embeddings, Some(&sumamrizer), &task, input.clone()).await?;
-        summarized = true;
-    }
+    let evaluation = Evaluation::new(&embeddings, &task, input.clone()).await?;
     let line = evaluation.to_string(&task);
     println!(
-        "{}{}",
+        "{}",
         if evaluation.expected {
             line.green()
         } else {
             line.red()
         },
-        if summarized {
-            let dif = evaluation.score - score_without_summarizing;
-            let sig = if dif > 0.0 {
-                "+"
-            } else if dif < 0.0 {
-                ""
-            } else {
-                " "
-            };
-            format!(" ({}{:.2} after summarizing)", sig, dif)
-        } else {
-            "".to_string()
-        }
     );
     Ok(evaluation.score)
 }
 
-pub async fn run(
-    args: Option<Vec<String>>,
-    skip_summary: bool,
-    threshold_difference: f32,
-) -> Result<()> {
+pub async fn run(args: Option<Vec<String>>) -> Result<()> {
     let labels = labels(args);
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();
-    let summarizer = Arc::new(Mutex::new(Summarizer::new().await?)).clone();
     for (idx, label) in labels.iter().enumerate() {
         let mut input = Input::new(&embeddings, label.clone()).await?;
         println!("{}", input.to_string(idx).blue().bold());
         for path in paths.iter() {
             input.push(
                 path,
-                simulate(
-                    embeddings.clone(),
-                    summarizer.clone(),
-                    skip_summary,
-                    threshold_difference,
-                    input.clone(),
-                    path,
-                )
-                .await?,
+                simulate(embeddings.clone(), input.clone(), path).await?,
             )?;
         }
         input.stats()

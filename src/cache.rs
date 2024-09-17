@@ -1,8 +1,8 @@
-use airnope::{embeddings, summary};
+use airnope::embeddings;
 use anyhow::{anyhow, Result};
 use dirs::cache_dir;
 use std::{env, path::PathBuf};
-use tokio::{fs::remove_dir_all, try_join};
+use tokio::fs::remove_dir_all;
 use walkdir::WalkDir;
 
 fn format_size(size: u64) -> String {
@@ -44,6 +44,5 @@ pub async fn clean_rust_bert_cache(dry_run: bool) -> Result<()> {
 }
 
 pub async fn download_all() -> Result<()> {
-    try_join!(summary::download(), embeddings::download())?;
-    Ok(())
+    embeddings::download().await
 }

@@ -41,7 +41,9 @@ async fn handle_request(
     cache.insert(ip, true).await;
     match payload {
         Ok(data) => match is_spam(&embeddings, &data.message).await {
-            Ok(spam) => Ok(HttpResponse::Ok().json(Response { spam })),
+            Ok(guess) => Ok(HttpResponse::Ok().json(Response {
+                spam: guess.is_spam,
+            })),
             Err(e) => {
                 log::error!("{:?}", e);
                 Ok(HttpResponse::InternalServerError().body(""))

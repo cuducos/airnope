@@ -1,11 +1,11 @@
 use crate::{
     embeddings::{embeddings_for, Embeddings, EMBEDDINGS_SIZE},
-    truncated,
+    truncated, Guess,
 };
 use acap::cos::cosine_distance;
 use anyhow::Result;
 use futures::future::try_join_all;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -16,7 +16,7 @@ pub const LABELS: [&str; 3] = [
 ];
 pub const THRESHOLD: f32 = 0.5;
 
-type LabelVectors = [[f32; EMBEDDINGS_SIZE]; LABELS.len()];
+type LabelVectors = Vec<[f32; EMBEDDINGS_SIZE]>;
 
 #[derive(Clone)]
 pub struct ZeroShotClassification {
@@ -46,32 +46,33 @@ pub fn average_without_extremes(scores: &Vec<f32>) -> f32 {
 }
 
 impl ZeroShotClassification {
-    pub async fn new(embeddings: &Arc<Mutex<Embeddings>>) -> Result<Self> {
-        match try_join_all(
-            LABELS
-                .iter()
-                .map(|label| embeddings_for(Arc::clone(embeddings), label)),
+    pub async fn new<T>(embeddings: &Arc<Mutex<Embeddings>>, labels: T) -> Result<Self>
+    where
+        T: IntoIterator,
+        T::Item: AsRef<str>,
+    {
+        let vectors: Vec<[f32; EMBEDDINGS_SIZE]> = try_join_all(
+            labels
+                .into_iter()
+                .map(|label| embeddings_for(Arc::clone(embeddings), label.as_ref().to_string())),
         )
-        .await?
-        .try_into()
-        {
-            Ok(vectors) => Ok(Self { vectors }),
-            Err(_) => Err(anyhow::anyhow!("Failed to get embeddings for labels")),
-        }
+        .await?;
+
+        Ok(Self { vectors })
     }
 
-    pub async fn score(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<f32> {
-        let vector = embeddings_for(Arc::clone(embeddings), txt).await?;
+    pub async fn default(embeddings: &Arc<Mutex<Embeddings>>) -> Result<Self> {
+        Self::new(embeddings, LABELS).await
+    }
+
+    pub async fn is_spam(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<Guess> {
+        let vector = embeddings_for(Arc::clone(embeddings), txt.to_string()).await?;
         let scores = self
             .vectors
-            .into_par_iter()
+            .par_iter()
             .map(|label| cosine_distance(label.to_vec(), vector.to_vec()))
             .collect::<Vec<f32>>();
-        Ok(average_without_extremes(&scores))
-    }
-
-    pub async fn is_spam(&self, embeddings: &Arc<Mutex<Embeddings>>, txt: &str) -> Result<bool> {
-        let score = self.score(embeddings, txt).await?;
+        let score = average_without_extremes(&scores);
         let result = score > THRESHOLD;
         if result {
             log::info!(
@@ -80,7 +81,11 @@ impl ZeroShotClassification {
             );
             log::debug!("{}", truncated(txt));
         }
-        Ok(result)
+        Ok(Guess {
+            is_spam: result,
+            score: Some(score),
+            scores,
+        })
     }
 }
 
@@ -93,7 +98,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_is_spam() {
         let embeddings = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
-        let model = ZeroShotClassification::new(&embeddings).await.unwrap();
+        let model = ZeroShotClassification::default(&embeddings).await.unwrap();
 
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
@@ -103,22 +108,25 @@ mod tests {
             file.read_to_string(&mut contents).await.unwrap();
 
             let got = model.is_spam(&embeddings, &contents).await.unwrap();
-            let expected = path
-                .file_stem()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .starts_with("spam");
-            let score = model.score(&embeddings, &contents).await.unwrap();
+            if let Some(score) = got.score {
+                let expected = path
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .starts_with("spam");
 
-            assert_eq!(
-                expected,
-                got,
-                "{} was not flagged as expected (score = {}, threshold = {})",
-                path.display(),
-                score,
-                THRESHOLD,
-            );
+                assert_eq!(
+                    expected,
+                    got.is_spam,
+                    "{} was not flagged as expected (score = {}, threshold = {})",
+                    path.display(),
+                    score,
+                    THRESHOLD,
+                );
+            } else {
+                panic!("{} got no score", path.display());
+            }
         }
     }
 

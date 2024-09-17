@@ -67,7 +67,7 @@ async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &M
                 log::error!("Error in the pipeline: {:?}", e);
                 return;
             }
-            if let Ok(false) = result {
+            if let Ok(false) = result.map(|r| r.is_spam) {
                 return;
             }
             if is_admin(bot, msg).await {

@@ -1,23 +1,38 @@
 pub mod common;
 pub use common::embeddings;
 pub use common::re;
-pub use common::summary;
 pub use common::telegram;
 pub use common::zsc;
 
 use anyhow::Result;
+use common::zsc::ZeroShotClassification;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 const MESSAGE_PREVIEW_SIZE: usize = 128;
 
-pub async fn is_spam(embeddings: &Arc<Mutex<embeddings::Embeddings>>, txt: &str) -> Result<bool> {
+#[derive(Debug, PartialEq)]
+pub struct Guess {
+    pub is_spam: bool,
+    pub score: Option<f32>,
+    pub scores: Vec<f32>,
+}
+
+pub async fn is_spam_with_custom_classifier(
+    embeddings: &Arc<Mutex<embeddings::Embeddings>>,
+    classifier: ZeroShotClassification,
+    txt: &str,
+) -> Result<Guess> {
     let regex = re::RegularExpression::new().await?;
-    if !regex.is_spam(txt).await? {
-        return Ok(false);
+    let result = regex.is_spam(txt).await?;
+    if !result.is_spam {
+        return Ok(result);
     }
-    let zero_shot = zsc::ZeroShotClassification::new(embeddings).await?;
-    zero_shot.is_spam(embeddings, txt).await
+    classifier.is_spam(embeddings, txt).await
+}
+pub async fn is_spam(embeddings: &Arc<Mutex<embeddings::Embeddings>>, txt: &str) -> Result<Guess> {
+    let zero_shot = zsc::ZeroShotClassification::default(embeddings).await?;
+    is_spam_with_custom_classifier(embeddings, zero_shot, txt).await
 }
 
 fn truncated(message: &str) -> String {
@@ -38,8 +53,8 @@ fn truncated(message: &str) -> String {
 mod tests {
     use super::*;
     use embeddings::Embeddings;
-    use tokio::fs;
-    use tokio::io::AsyncReadExt;
+    use tokio::{fs, io::AsyncReadExt};
+    use zsc::THRESHOLD;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_is_spam() {
@@ -61,10 +76,19 @@ mod tests {
 
             assert_eq!(
                 expected,
-                got,
+                got.is_spam,
                 "{} was not flagged as expected",
                 path.display(),
             );
+            if expected {
+                assert!(
+                    got.score.unwrap_or(0.0) > THRESHOLD,
+                    "expected score for {} to be greater than {}, got {}",
+                    path.display(),
+                    THRESHOLD,
+                    got.score.unwrap_or(0.0)
+                );
+            }
         }
     }
 }

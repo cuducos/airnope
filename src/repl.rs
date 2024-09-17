@@ -28,8 +28,9 @@ pub async fn run() -> Result<()> {
         if input == "exit" {
             break;
         }
-        if is_spam(&embeddings, input.as_str()).await? {
-            println!("Spam");
+        let result = is_spam(&embeddings, input.as_str()).await?;
+        if result.is_spam {
+            println!("Spam (score = {:.3})", result.score.unwrap_or(0.0));
         } else {
             println!("Not spam");
         }

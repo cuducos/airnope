@@ -1,4 +1,4 @@
-use crate::truncated;
+use crate::{truncated, Guess};
 use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 
@@ -54,7 +54,7 @@ impl RegularExpression {
         })
     }
 
-    pub async fn is_spam(&self, txt: &str) -> Result<bool> {
+    pub async fn is_spam(&self, txt: &str) -> Result<Guess> {
         let cleaned = self.cleanup.replace_all(txt, " ").to_string();
         let result = self.airdrop.is_match(cleaned.as_str())
             || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()));
@@ -62,7 +62,11 @@ impl RegularExpression {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
         }
-        Ok(result)
+        Ok(Guess {
+            is_spam: result,
+            score: None,
+            scores: vec![],
+        })
     }
 }
 
@@ -134,10 +138,11 @@ mod tests {
                 let model = RegularExpression::new().await.unwrap();
                 let got = model.is_spam(w).await.unwrap();
                 assert_eq!(
-                    got, expected,
+                    got.is_spam, expected,
                     "expected: {:?} for {:?}, got: {:?}",
-                    expected, w, got
+                    expected, w, got.is_spam
                 );
+                assert_eq!(got.score, None);
             }
         }
     }
@@ -152,7 +157,7 @@ mod tests {
             let mut file = fs::File::open(&path).await.unwrap();
             file.read_to_string(&mut contents).await.unwrap();
             let got = model.is_spam(contents.as_str()).await.unwrap();
-            assert!(got, "{} was not flagged as spam", path.display(),);
+            assert!(got.is_spam, "{} was not flagged as spam", path.display(),);
         }
     }
 }
