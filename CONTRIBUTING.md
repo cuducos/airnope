@@ -5,8 +5,6 @@
 * [`rustup`](https://www.rust-lang.org/tools/install)
 * an environment variable called `TELOXIDE_TOKEN` with the [Telegram API token](https://core.telegram.org/bots/#how-do-i-create-a-bot).
 
-You can copy `.env.sample` as `.env` and configure it accordingly. If you use [`createnv`](https://github.com/cuducos/createnv) it will guide you.
-
 ## Running the bot
 
 The bot can be ran as a webhook or using the [long pooling strategy](https://core.telegram.org/bots/api#getupdates):

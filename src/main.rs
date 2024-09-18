@@ -2,7 +2,6 @@ use airnope::{telegram, telegram::AirNope};
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Commands};
-use dotenv::dotenv;
 use std::env;
 
 mod bench;
@@ -14,7 +13,6 @@ mod repl;
 const DEFAULT_LOG_LEVEL: &str = "INFO";
 
 fn init_log() -> Result<()> {
-    dotenv().ok();
     let mut default_used = false;
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", DEFAULT_LOG_LEVEL);
