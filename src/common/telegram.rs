@@ -29,14 +29,18 @@ pub enum AirNope {
 }
 
 async fn shutdown(wait: Duration) -> Result<()> {
-    let pid = process::id();
     log::warn!("AirNope shutdown timer set to {:?}", wait);
     sleep(wait).await;
     log::warn!("Shutting down AirNope...");
-    Command::new("kill")
-        .args(["-s", "INT", pid.to_string().as_ref()])
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(format!("kill -s INT {}", process::id()))
         .output()?;
-    log::warn!("AirNope gracefully stopped");
+    if !output.status.success() {
+        log::error!("{}", String::from_utf8_lossy(&output.stderr));
+    } else {
+        log::warn!("AirNope gracefully stopped");
+    }
     Ok(())
 }
 
