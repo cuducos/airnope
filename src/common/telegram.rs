@@ -1,7 +1,12 @@
 use crate::embeddings::Embeddings;
 use anyhow::Result;
 use clap::ValueEnum;
-use std::{env, sync::Arc, time::Duration};
+use std::{
+    env,
+    process::{self, Command},
+    sync::Arc,
+    time::Duration,
+};
 use teloxide::{
     dispatching::{DefaultKey, UpdateFilterExt},
     dptree,
@@ -11,7 +16,7 @@ use teloxide::{
     update_listeners::webhooks,
     RequestError,
 };
-use tokio::{sync::Mutex, time::sleep};
+use tokio::{spawn, sync::Mutex, time::sleep};
 use url::Url;
 
 const DEFAULT_PORT: u16 = 8000;
@@ -21,6 +26,18 @@ const DEFAULT_HOST_IP: [u8; 4] = [0, 0, 0, 0];
 pub enum AirNope {
     LongPooling,
     Webhook,
+}
+
+async fn shutdown(wait: Duration) -> Result<()> {
+    let pid = process::id();
+    log::warn!("AirNope shutdown timer set to {:?}", wait);
+    sleep(wait).await;
+    log::warn!("Shutting down AirNope...");
+    Command::new("kill")
+        .args(["-s", "INT", pid.to_string().as_ref()])
+        .output()?;
+    log::warn!("AirNope gracefully stopped");
+    Ok(())
 }
 
 pub async fn delete_message(bot: &Bot, msg: &Message) -> Result<()> {
@@ -117,7 +134,7 @@ async fn webhook(
     Ok(())
 }
 
-pub async fn run(mode: AirNope) -> Result<()> {
+pub async fn run(mode: AirNope, shutdown_in: Option<u64>) -> Result<()> {
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
     let handler = dptree::entry()
@@ -137,6 +154,18 @@ pub async fn run(mode: AirNope) -> Result<()> {
         .dependencies(dptree::deps![embeddings])
         .enable_ctrlc_handler()
         .build();
+
+    // Hacky temporary solution to bots that stop responding after a while
+    // See https://github.com/teloxide/teloxide/issues/978
+    if let Some(timeout) = shutdown_in {
+        let wait = Duration::from_secs(timeout * 60);
+        spawn(async move {
+            if let Err(e) = shutdown(wait).await {
+                log::error!("Error shutting down AirNope: {}", e);
+            }
+        });
+    }
+
     log::info!("Starting AirNope bot...");
     match mode {
         AirNope::LongPooling => dispatcher.dispatch().await,

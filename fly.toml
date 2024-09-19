@@ -4,6 +4,9 @@ swap_size_mb = 512
 
 [build]
 
+[processes]
+  web = "airnope bot --mode webhook --shutdown-in 30"
+
 [env]
   PORT = '8080'
 
@@ -13,9 +16,12 @@ swap_size_mb = 512
   auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 0
-  processes = ['app']
+  processes = ['web']
 
 [[vm]]
   memory = '256mb'
   cpu_kind = 'shared'
   cpus = 1
+
+[[restart]]
+  policy = "always"
