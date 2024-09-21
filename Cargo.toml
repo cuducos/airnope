@@ -23,3 +23,6 @@ teloxide = { version = "0.13.0", features = ["ctrlc_handler", "webhooks-axum"] }
 tokio = { version = "1.40.0", features = ["rt-multi-thread", "macros", "fs", "rt"] }
 url = "2.5.2"
 walkdir = "2.5.0"
+
+[profile.release]
+lto = true
