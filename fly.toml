@@ -5,7 +5,7 @@ swap_size_mb = 512
 [build]
 
 [processes]
-  web = "airnope bot --mode webhook --shutdown-in 30"
+  web = "airnope bot --mode webhook --shutdown-in 15"
 
 [env]
   PORT = '8080'
