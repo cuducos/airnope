@@ -123,8 +123,11 @@ async fn webhook(
         }
     };
     let url = Url::parse(format!("https://{host}/webhook").as_str())?;
-    let opts =
+    let mut opts =
         webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(32);
+    if let Ok(secret_token) = env::var("TELEGRAM_WEBHOOK_SECRET_TOKEN") {
+        opts = opts.secret_token(secret_token);
+    }
     let mut webhook = bot.set_webhook(url);
     webhook.allowed_updates = Some(vec![AllowedUpdate::Message, AllowedUpdate::EditedMessage]);
     webhook.send().await?;

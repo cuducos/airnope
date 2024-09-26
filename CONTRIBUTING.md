@@ -19,7 +19,15 @@ If there is no flag `--mode`:
 * It starts as a webhook if both `PORT` and `HOST` environment variables are set
 * It starts using the long pooling strategy otherwise
 
+### Webhook
+
 When running as webhook, AirNope register its URL (and secret token) with Telegram servers. During a graceful shutdown, AirNope [removes the webhook](https://core.telegram.org/bots/api#deletewebhook) from Telegram servers, so you can go back to long pooling if needed.
+
+#### Secret token
+
+AirNope automatically creates a random [secret token](https://core.telegram.org/bots/api#setwebhook) each time it starts, sharing it with Telegram and habndling the appropriated headers of incoming requests. If you want to set a custom secret token, set the environment variable `TELEGRAM_WEBHOOK_SECRET_TOKEN` (useful if running more than one instance of the web server). According to Telegram:
+
+> 1-256 characters. Only characters `A-Z`, `a-z`, `0-9`, `_ and `-` are allowed.
 
 ## Running the REPL
 
