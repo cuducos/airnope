@@ -44,19 +44,48 @@ async fn shutdown(wait: Duration) -> Result<()> {
     Ok(())
 }
 
-pub async fn delete_message(bot: &Bot, msg: &Message) -> Result<()> {
-    bot.delete_message(msg.chat.id, msg.id).send().await?;
-    Ok(())
+async fn delete_message(bot: &Bot, msg: &Message) {
+    let chat_id = msg.chat.id;
+    let message_id = msg.id;
+    let bot = bot.clone();
+    spawn(async move {
+        match bot.delete_message(chat_id, message_id).send().await {
+            Ok(_) => log::debug!("Message deleted"),
+            Err(e) => log::error!("Error deleting message: {:?}", e),
+        };
+    });
 }
 
-pub async fn ban_user(bot: &Bot, msg: &Message) -> Result<()> {
+async fn ban_user(bot: &Bot, msg: &Message) {
     if let Some(user) = &msg.from {
-        bot.kick_chat_member(msg.chat.id, user.id).send().await?;
+        let chat_id = msg.chat.id;
+        let user_id = user.id;
+        let bot = bot.clone();
+        spawn(async move {
+            match bot.kick_chat_member(chat_id, user_id).send().await {
+                Ok(_) => log::debug!("User banned"),
+                Err(e) => log::error!("Error banning user: {:?}", e),
+            };
+        });
     }
-    Ok(())
 }
 
-pub async fn is_admin(bot: &Bot, msg: &Message) -> bool {
+async fn react(bot: &Bot, msg: &Message) {
+    let eyes = ReactionType::Emoji {
+        emoji: "👀".to_string(),
+    };
+    let mut request = bot.set_message_reaction(msg.chat.id, msg.id);
+    request.reaction = Some(vec![eyes]);
+
+    spawn(async move {
+        match request.send().await {
+            Ok(_) => log::debug!("Reacted to message"),
+            Err(e) => log::error!("Error reacting to spam message: {:?}", e),
+        };
+    });
+}
+
+async fn is_admin(bot: &Bot, msg: &Message) -> bool {
     if let Some(user) = &msg.from {
         if let Ok(member) = bot.get_chat_member(msg.chat.id, user.id).await {
             match member.status() {
@@ -67,17 +96,6 @@ pub async fn is_admin(bot: &Bot, msg: &Message) -> bool {
         }
     }
     false
-}
-
-async fn react(bot: &Bot, msg: &Message) {
-    let eyes = ReactionType::Emoji {
-        emoji: "👀".to_string(),
-    };
-    let mut request = bot.set_message_reaction(msg.chat.id, msg.id);
-    request.reaction = Some(vec![eyes]);
-    if let Err(e) = request.send().await {
-        log::error!("Error reacting to spam message: {:?}", e);
-    };
 }
 
 async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &Message) {
@@ -95,9 +113,7 @@ async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &M
                 react(bot, msg).await;
                 return;
             }
-            if let Err(e) = tokio::try_join!(delete_message(bot, msg), ban_user(bot, msg),) {
-                log::error!("Error handling spam: {:?}", e);
-            }
+            tokio::join!(delete_message(bot, msg), ban_user(bot, msg),);
         }
     }
 }
