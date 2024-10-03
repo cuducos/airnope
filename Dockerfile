@@ -2,7 +2,7 @@ FROM debian:bookworm-slim AS libtorch
 WORKDIR /usr/src
 
 ENV BUILD_PKGS="ca-certificates curl unzip"
-ENV LIBTORCH_ZIP=libtorch-cxx11-abi-shared-with-deps-2.4.0%2Bcpu.zip
+ENV LIBTORCH_ZIP=libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip
 
 RUN apt-get clean && \
     apt-get update && \
