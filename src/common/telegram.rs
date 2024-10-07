@@ -1,12 +1,7 @@
 use crate::embeddings::Embeddings;
 use anyhow::Result;
 use clap::ValueEnum;
-use std::{
-    env,
-    process::{self, Command},
-    sync::Arc,
-    time::Duration,
-};
+use std::{env, sync::Arc, time::Duration};
 use teloxide::{
     dispatching::{DefaultKey, UpdateFilterExt},
     dptree,
@@ -28,45 +23,19 @@ pub enum AirNope {
     Webhook,
 }
 
-async fn shutdown(wait: Duration) -> Result<()> {
-    log::warn!("AirNope shutdown timer set to {:?}", wait);
-    sleep(wait).await;
-    log::warn!("Shutting down AirNope...");
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(format!("kill -s INT {}", process::id()))
-        .output()?;
-    if !output.status.success() {
-        log::error!("{}", String::from_utf8_lossy(&output.stderr));
-    } else {
-        log::warn!("AirNope gracefully stopped");
-    }
-    Ok(())
+async fn delete_message(bot: Bot, msg: Message) {
+    match bot.delete_message(msg.chat.id, msg.id).send().await {
+        Ok(_) => log::debug!("Message deleted"),
+        Err(e) => log::error!("Error deleting message: {:?}", e),
+    };
 }
 
-async fn delete_message(bot: &Bot, msg: &Message) {
-    let chat_id = msg.chat.id;
-    let message_id = msg.id;
-    let bot = bot.clone();
-    spawn(async move {
-        match bot.delete_message(chat_id, message_id).send().await {
-            Ok(_) => log::debug!("Message deleted"),
-            Err(e) => log::error!("Error deleting message: {:?}", e),
-        };
-    });
-}
-
-async fn ban_user(bot: &Bot, msg: &Message) {
+async fn ban_user(bot: Bot, msg: Message) {
     if let Some(user) = &msg.from {
-        let chat_id = msg.chat.id;
-        let user_id = user.id;
-        let bot = bot.clone();
-        spawn(async move {
-            match bot.kick_chat_member(chat_id, user_id).send().await {
-                Ok(_) => log::debug!("User banned"),
-                Err(e) => log::error!("Error banning user: {:?}", e),
-            };
-        });
+        match bot.kick_chat_member(msg.chat.id, user.id).send().await {
+            Ok(_) => log::debug!("User banned"),
+            Err(e) => log::error!("Error banning user: {:?}", e),
+        };
     }
 }
 
@@ -76,13 +45,10 @@ async fn react(bot: &Bot, msg: &Message) {
     };
     let mut request = bot.set_message_reaction(msg.chat.id, msg.id);
     request.reaction = Some(vec![eyes]);
-
-    spawn(async move {
-        match request.send().await {
-            Ok(_) => log::debug!("Reacted to message"),
-            Err(e) => log::error!("Error reacting to spam message: {:?}", e),
-        };
-    });
+    match request.send().await {
+        Ok(_) => log::debug!("Reacted to message"),
+        Err(e) => log::error!("Error reacting to spam message: {:?}", e),
+    };
 }
 
 async fn is_admin(bot: &Bot, msg: &Message) -> bool {
@@ -113,7 +79,8 @@ async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &M
                 react(bot, msg).await;
                 return;
             }
-            tokio::join!(delete_message(bot, msg), ban_user(bot, msg),);
+            spawn(delete_message(bot.clone(), msg.clone()));
+            spawn(ban_user(bot.clone(), msg.clone()));
         }
     }
 }
@@ -157,7 +124,7 @@ async fn webhook(
     Ok(())
 }
 
-pub async fn run(mode: AirNope, shutdown_in: Option<u64>) -> Result<()> {
+pub async fn run(mode: AirNope) -> Result<()> {
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
     let handler = dptree::entry()
@@ -177,19 +144,7 @@ pub async fn run(mode: AirNope, shutdown_in: Option<u64>) -> Result<()> {
         .dependencies(dptree::deps![embeddings])
         .enable_ctrlc_handler()
         .build();
-
-    // Hacky temporary solution to bots that stop responding after a while
-    // See https://github.com/teloxide/teloxide/issues/978
-    if let Some(timeout) = shutdown_in {
-        let wait = Duration::from_secs(timeout * 60);
-        spawn(async move {
-            if let Err(e) = shutdown(wait).await {
-                log::error!("Error shutting down AirNope: {}", e);
-            }
-        });
-    }
-
-    log::info!("Starting AirNope bot...");
+    log::info!("[{:?}] Starting AirNope bot...", mode);
     match mode {
         AirNope::LongPooling => dispatcher.dispatch().await,
         AirNope::Webhook => webhook(bot, dispatcher).await?,

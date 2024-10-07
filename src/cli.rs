@@ -14,10 +14,6 @@ pub enum Commands {
     Bot {
         #[clap(long, short)]
         mode: Option<AirNope>,
-
-        // Temporary solution to https://github.com/teloxide/teloxide/issues/978
-        #[clap(long, short, help = "Shutdown timer (in minutes)")]
-        shutdown_in: Option<u64>,
     },
     /// Runs benchmark of the zero-shot classification model (accepts labels as arguments)
     Bench {

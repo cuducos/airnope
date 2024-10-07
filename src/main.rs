@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
     init_log()?;
     let args = Cli::parse();
     match args.command {
-        Commands::Bot { mode, shutdown_in } => telegram::run(detect_mode(mode), shutdown_in).await,
+        Commands::Bot { mode } => telegram::run(detect_mode(mode)).await,
         Commands::Repl => repl::run().await,
         Commands::Demo => demo::run().await,
         Commands::Download => cache::download_all().await,
