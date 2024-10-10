@@ -3,15 +3,18 @@ use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 
 const A: &str = "[аa🅰🅰️🇦🇦]";
+const C: &str = "[cC]";
 const D: &str = "[dԁ🇩]";
 const E: &str = "[eEе3€ℯ🇪]";
 const I: &str = "[іiI1lℹ️🇮]";
 const K: &str = "[kK🇰]";
 const L: &str = "[lL1|ℓ🇱]";
+const M: &str = "[mM]";
 const N: &str = "[nNℕ🇳]";
 const O: &str = "[оo0🅾️🇴]";
 const P: &str = "[рpρϱ🅿️🇵]";
 const R: &str = "[рr🇷]";
+const S: &str = "[sSЅ]";
 const T: &str = "[tTТ7†🇹]";
 const W: &str = "[wW🇼]";
 
@@ -20,6 +23,8 @@ pub struct RegularExpression {
     airdrop: Regex,
     wallet: Regex,
     token: Regex,
+    claim: Regex,
+    swap: Regex,
     cleanup: Regex,
 }
 
@@ -45,11 +50,15 @@ impl RegularExpression {
         let airdrop = to_regex([A, I, R, D, R, O, P])?;
         let wallet = to_regex([W, A, L, L, E, T])?;
         let token = to_regex([T, O, K, E, N])?;
+        let claim = to_regex([C, L, A, I, M])?;
+        let swap = to_regex([S, W, A, P])?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
             wallet,
             token,
+            claim,
+            swap,
             cleanup,
         })
     }
@@ -57,7 +66,8 @@ impl RegularExpression {
     pub async fn is_spam(&self, txt: &str) -> Result<Guess> {
         let cleaned = self.cleanup.replace_all(txt, " ").to_string();
         let result = self.airdrop.is_match(cleaned.as_str())
-            || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()));
+            || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()))
+            || (self.claim.is_match(cleaned.as_str()) && self.swap.is_match(cleaned.as_str()));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
