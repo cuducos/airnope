@@ -26,6 +26,7 @@ pub struct RegularExpression {
     claim: Regex,
     swap: Regex,
     cleanup: Regex,
+    reward: Regex,
 }
 
 fn to_regex<I>(chars: I) -> Result<Regex>
@@ -52,6 +53,7 @@ impl RegularExpression {
         let token = to_regex([T, O, K, E, N])?;
         let claim = to_regex([C, L, A, I, M])?;
         let swap = to_regex([S, W, A, P])?;
+        let reward = to_regex([R, E, W, A, R, D])?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
@@ -59,6 +61,7 @@ impl RegularExpression {
             token,
             claim,
             swap,
+            reward,
             cleanup,
         })
     }
@@ -67,6 +70,7 @@ impl RegularExpression {
         let cleaned = self.cleanup.replace_all(txt, " ").to_string();
         let result = self.airdrop.is_match(cleaned.as_str())
             || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()))
+            || (self.wallet.is_match(cleaned.as_str()) && self.reward.is_match(cleaned.as_str()))
             || (self.claim.is_match(cleaned.as_str()) && self.swap.is_match(cleaned.as_str()));
         if result {
             log::info!("Message detected as spam by RegularExpression");
