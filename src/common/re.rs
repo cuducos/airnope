@@ -2,7 +2,7 @@ use crate::{truncated, Guess};
 use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 
-const A: &str = "[аa🅰🅰️🇦🇦]";
+const A: &str = "[аa🅰🅰️🇦🇦о]";
 const C: &str = "[cC]";
 const D: &str = "[dԁ🇩]";
 const E: &str = "[eEе3€ℯ🇪]";
