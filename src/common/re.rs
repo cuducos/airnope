@@ -16,7 +16,9 @@ const P: &str = "[рpρϱ🅿️🇵]";
 const R: &str = "[рr🇷]";
 const S: &str = "[sSЅ]";
 const T: &str = "[tTТ7†🇹]";
+const U: &str = "[uUµ🇺]";
 const W: &str = "[wW🇼]";
+const Y: &str = "[yY¥🇾]";
 
 #[derive(Clone)]
 pub struct RegularExpression {
@@ -25,8 +27,10 @@ pub struct RegularExpression {
     token: Regex,
     claim: Regex,
     swap: Regex,
-    cleanup: Regex,
     reward: Regex,
+    crypto: Regex,
+    opportunity: Regex,
+    cleanup: Regex,
 }
 
 fn to_regex<I>(chars: I) -> Result<Regex>
@@ -54,6 +58,8 @@ impl RegularExpression {
         let claim = to_regex([C, L, A, I, M])?;
         let swap = to_regex([S, W, A, P])?;
         let reward = to_regex([R, E, W, A, R, D])?;
+        let crypto = to_regex([C, R, Y, P, T, O])?;
+        let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T, Y])?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
@@ -62,6 +68,8 @@ impl RegularExpression {
             claim,
             swap,
             reward,
+            crypto,
+            opportunity,
             cleanup,
         })
     }
@@ -71,7 +79,9 @@ impl RegularExpression {
         let result = self.airdrop.is_match(cleaned.as_str())
             || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()))
             || (self.wallet.is_match(cleaned.as_str()) && self.reward.is_match(cleaned.as_str()))
-            || (self.claim.is_match(cleaned.as_str()) && self.swap.is_match(cleaned.as_str()));
+            || (self.claim.is_match(cleaned.as_str()) && self.swap.is_match(cleaned.as_str()))
+            || (self.crypto.is_match(cleaned.as_str())
+                && self.opportunity.is_match(cleaned.as_str()));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
