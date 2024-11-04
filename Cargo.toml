@@ -21,7 +21,7 @@ rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 serde = "1.0.214"
 teloxide = { version = "0.13.0", features = ["ctrlc_handler", "webhooks-axum"] }
 tokio = { version = "1.41.0", features = ["rt-multi-thread", "macros", "fs", "rt"] }
-url = "2.5.2"
+url = "2.5.3"
 walkdir = "2.5.0"
 
 [profile.release]
