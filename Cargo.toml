@@ -8,7 +8,7 @@ acap = "0.3.0"
 actix-cors = "0.7.0"
 actix-web = "4.9.0"
 anyhow = "1.0.93"
-clap = { version = "4.5.21", features = ["derive"] }
+clap = { version = "4.5.20", features = ["derive"] }
 colored = "2.1.0"
 dirs = "5.0.1"
 futures = "0.3.31"
@@ -18,7 +18,7 @@ pretty_env_logger = "0.5.0"
 rayon = "1.10.0"
 regex = "1.11.1"
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
-serde = "1.0.215"
+serde = "1.0.214"
 teloxide = { version = "0.13.0", features = ["ctrlc_handler", "webhooks-axum"] }
 tokio = { version = "1.41.1", features = ["rt-multi-thread", "macros", "fs", "rt"] }
 url = "2.5.3"
