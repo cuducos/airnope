@@ -46,7 +46,9 @@ jobs:
           url: ${{ secrets.API_DEPLOY_WEBHOOK }}
         run: curl "$url"
 
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --image ghcr.io/cuducos/airnope:main
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Deploy the bot
+        uses: digitalocean/app_action/deploy@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+          project_id: ${{ secrets.DIGITALOCEAN_PROJECT_ID }}
+          app_name: airnope
