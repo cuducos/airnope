@@ -1,153 +1,237 @@
-use crate::embeddings::Embeddings;
-use anyhow::Result;
-use clap::ValueEnum;
-use std::{env, sync::Arc, time::Duration};
-use teloxide::{
-    dispatching::{DefaultKey, UpdateFilterExt},
-    dptree,
-    prelude::{Bot, Dispatcher, LoggingErrorHandler, Message, Request, Requester},
-    respond,
-    types::{AllowedUpdate, ChatMemberStatus, MessageKind, ReactionType, Update},
-    update_listeners::webhooks,
-    RequestError,
-};
-use tokio::{spawn, sync::Mutex, time::sleep};
-use url::Url;
+use anyhow::{anyhow, Context, Result};
+use reqwest::{Client as ReqwestClient, Url};
+use serde::{Deserialize, Serialize};
+use std::env;
 
-const DEFAULT_PORT: u16 = 8000;
-const DEFAULT_HOST_IP: [u8; 4] = [0, 0, 0, 0];
+const TELEGRAM_API_URL: &str = "https://api.telegram.org/bot";
+const DEFAULT_MAX_CONNECTIONS: u8 = 42;
+const DEFAULT_REACTION: &str = "👀";
+const DEFAULT_ALLOWED_UPDATES: &[&str] = &[
+    "message",
+    "edited_message",
+    "channel_post",
+    "edited_channel_post",
+    "business_message",
+    "edited_business_message",
+];
 
-#[derive(Clone, Debug, ValueEnum)]
-pub enum AirNope {
-    LongPooling,
-    Webhook,
+#[derive(Serialize)]
+struct GetChatMemberPayload {
+    chat_id: i64,
+    user_id: i64,
 }
 
-async fn delete_message(bot: Bot, msg: Message) {
-    match bot.delete_message(msg.chat.id, msg.id).send().await {
-        Ok(_) => log::debug!("Message deleted"),
-        Err(e) => log::error!("Error deleting message: {:?}", e),
-    };
+#[derive(Serialize)]
+struct ReactionType {
+    #[serde(rename = "type")]
+    type_: String,
+    emoji: String,
 }
 
-async fn ban_user(bot: Bot, msg: Message) {
-    if let Some(user) = &msg.from {
-        match bot.kick_chat_member(msg.chat.id, user.id).send().await {
-            Ok(_) => log::debug!("User banned"),
-            Err(e) => log::error!("Error banning user: {:?}", e),
-        };
+#[derive(Serialize)]
+struct SetMessageReactionPayload {
+    chat_id: i64,
+    message_id: i64,
+    reaction: Vec<ReactionType>,
+    is_big: bool,
+}
+
+#[derive(Serialize)]
+struct BanChatMemberPayload {
+    chat_id: i64,
+    user_id: i64,
+}
+
+#[derive(Serialize)]
+struct DeleteMessagePayload {
+    chat_id: i64,
+    message_id: i64,
+}
+
+#[derive(Serialize)]
+pub struct SetWebhookPayload {
+    url: String,
+    max_connections: u8,
+    allowed_updates: Vec<String>,
+    secret_token: String,
+}
+
+#[derive(Serialize)]
+pub struct DeleteWebhookPayload {
+    drop_pending_updates: bool,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum Payload {
+    GetChatMember(GetChatMemberPayload),
+    SetMessageReaction(SetMessageReactionPayload),
+    BanChatMember(BanChatMemberPayload),
+    DeleteMessage(DeleteMessagePayload),
+    SetWebhook(SetWebhookPayload),
+    DeleteWebhook(DeleteWebhookPayload),
+}
+
+#[derive(Deserialize)]
+struct ChatMemberResponse {
+    status: String,
+}
+
+#[derive(Deserialize)]
+struct GetChatMemberResponse {
+    ok: bool,
+    result: ChatMemberResponse,
+}
+
+#[derive(Deserialize)]
+struct SuccessResponse {
+    ok: bool,
+    result: bool,
+}
+
+enum Response {
+    ChatMember(GetChatMemberResponse),
+    Success(SuccessResponse),
+}
+
+pub struct Client {
+    token: String,
+    http: ReqwestClient,
+}
+
+impl Client {
+    pub fn new() -> Result<Self> {
+        let token = env::var("TELEGRAM_BOT_TOKEN")
+            .map_err(|_| anyhow!("Environment variable TELEGRAM_BOT_TOKEN not found."))?;
+        let http = ReqwestClient::new();
+        Ok(Client { token, http })
     }
-}
 
-async fn react(bot: &Bot, msg: &Message) {
-    let eyes = ReactionType::Emoji {
-        emoji: "👀".to_string(),
-    };
-    let mut request = bot.set_message_reaction(msg.chat.id, msg.id);
-    request.reaction = Some(vec![eyes]);
-    match request.send().await {
-        Ok(_) => log::debug!("Reacted to message"),
-        Err(e) => log::error!("Error reacting to spam message: {:?}", e),
-    };
-}
+    fn endpoint(&self, payload: &Payload) -> &str {
+        match payload {
+            Payload::GetChatMember(_) => "getChatMember",
+            Payload::SetMessageReaction(_) => "setMessageReaction",
+            Payload::BanChatMember(_) => "banChatMember",
+            Payload::DeleteMessage(_) => "deleteMessage",
+            Payload::SetWebhook(_) => "setWebhook",
+            Payload::DeleteWebhook(_) => "deleteWebhook",
+        }
+    }
 
-async fn is_admin(bot: &Bot, msg: &Message) -> bool {
-    if let Some(user) = &msg.from {
-        if let Ok(member) = bot.get_chat_member(msg.chat.id, user.id).await {
-            match member.status() {
-                ChatMemberStatus::Administrator => return true,
-                ChatMemberStatus::Owner => return true,
-                _ => return false,
+    fn url(&self, endpoint: &str) -> Result<Url> {
+        let url = format!("{TELEGRAM_API_URL}{}/{}", self.token, endpoint);
+        Url::parse(&url).context(format!("Failed to build URL for {endpoint}"))
+    }
+
+    async fn post(&self, payload: &Payload) -> Result<Response> {
+        let endpoint = self.endpoint(payload);
+        let url = self
+            .url(endpoint)
+            .context(format!("Error creating URL for {endpoint}"))?;
+        let response = self
+            .http
+            .post(url)
+            .json(&payload)
+            .send()
+            .await
+            .context(format!("Error in request to {endpoint}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .await
+            .context("Error reading response from {endpoint}")?;
+        if !status.is_success() {
+            return Err(anyhow!("Request to {endpoint} failed: [{status}] {body}",));
+        }
+        match payload {
+            Payload::GetChatMember(_) => {
+                let chat_member: GetChatMemberResponse = serde_json::from_str(&body).context(
+                    format!("Failed to deserialize response from {endpoint}: {body}"),
+                )?;
+                Ok(Response::ChatMember(chat_member))
+            }
+            _ => {
+                let success: SuccessResponse = serde_json::from_str(&body).context(format!(
+                    "Failed to deserialize response from {endpoint}: {body}"
+                ))?;
+                Ok(Response::Success(success))
             }
         }
     }
-    false
-}
 
-async fn process_message(bot: &Bot, embeddings: &Arc<Mutex<Embeddings>>, msg: &Message) {
-    if let MessageKind::Common(_) = &msg.kind {
-        if let Some(txt) = msg.text() {
-            let result = crate::is_spam(embeddings, txt).await;
-            if let Err(e) = result {
-                log::error!("Error in the pipeline: {:?}", e);
-                return;
-            }
-            if let Ok(false) = result.map(|r| r.is_spam) {
-                return;
-            }
-            if is_admin(bot, msg).await {
-                react(bot, msg).await;
-                return;
-            }
-            spawn(delete_message(bot.clone(), msg.clone()));
-            spawn(ban_user(bot.clone(), msg.clone()));
+    pub async fn is_admin(&self, chat_id: i64, user_id: i64) -> Result<bool> {
+        let payload = Payload::GetChatMember(GetChatMemberPayload { chat_id, user_id });
+        match self.post(&payload).await? {
+            Response::ChatMember(response) => Ok(response.ok
+                && (response.result.status == "administrator"
+                    || response.result.status == "creator")),
+            _ => Err(anyhow!("Unexpected result response for getChatMember")),
         }
     }
-}
 
-async fn webhook(
-    bot: Bot,
-    mut dispatcher: Dispatcher<Bot, RequestError, DefaultKey>,
-) -> Result<()> {
-    let port: u16 = match env::var("PORT") {
-        Ok(p) => p.parse()?,
-        Err(_) => {
-            log::info!(
-                "No PORT environment variable set. Using default port {}.",
-                DEFAULT_PORT
-            );
-            DEFAULT_PORT
+    pub async fn set_message_reaction(&self, chat_id: i64, message_id: i64) -> Result<bool> {
+        let payload = Payload::SetMessageReaction(SetMessageReactionPayload {
+            chat_id,
+            message_id,
+            reaction: vec![ReactionType {
+                type_: "emoji".to_string(),
+                emoji: DEFAULT_REACTION.to_string(),
+            }],
+            is_big: false,
+        });
+        match self.post(&payload).await? {
+            Response::Success(response) => Ok(response.ok && response.result),
+            _ => Err(anyhow!("Unexpected result response for setMessageReaction")),
         }
-    };
-    let host = match env::var("HOST") {
-        Ok(h) => h,
-        Err(_) => {
-            return Err(anyhow::anyhow!("No HOST environment variable set."));
-        }
-    };
-    let url = Url::parse(format!("https://{host}/webhook").as_str())?;
-    let mut opts =
-        webhooks::Options::new((DEFAULT_HOST_IP, port).into(), url.clone()).max_connections(32);
-    if let Ok(secret_token) = env::var("TELEGRAM_WEBHOOK_SECRET_TOKEN") {
-        opts = opts.secret_token(secret_token);
     }
-    let mut webhook = bot.set_webhook(url);
-    webhook.allowed_updates = Some(vec![AllowedUpdate::Message, AllowedUpdate::EditedMessage]);
-    webhook.send().await?;
-    sleep(Duration::from_secs(2)).await; // Teloxide also sends setWebhook, this avoids a 429-like error
-    dispatcher
-        .dispatch_with_listener(
-            webhooks::axum(bot, opts).await?,
-            LoggingErrorHandler::with_custom_text("An error from the update listener"),
-        )
-        .await;
-    Ok(())
-}
 
-pub async fn run(mode: AirNope) -> Result<()> {
-    let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
-    let bot = Bot::from_env(); // requires TELOXIDE_TOKEN environment variable
-    let handler = dptree::entry()
-        .branch(Update::filter_message().endpoint(
-            |bot: Bot, embeddings: Arc<Mutex<Embeddings>>, msg: Message| async move {
-                process_message(&bot, &embeddings, &msg).await;
-                respond(())
-            },
-        ))
-        .branch(Update::filter_edited_message().endpoint(
-            |bot: Bot, embeddings: Arc<Mutex<Embeddings>>, msg: Message| async move {
-                process_message(&bot, &embeddings, &msg).await;
-                respond(())
-            },
-        ));
-    let mut dispatcher = Dispatcher::builder(bot.clone(), handler)
-        .dependencies(dptree::deps![embeddings])
-        .enable_ctrlc_handler()
-        .build();
-    log::info!("[{:?}] Starting AirNope bot...", mode);
-    match mode {
-        AirNope::LongPooling => dispatcher.dispatch().await,
-        AirNope::Webhook => webhook(bot, dispatcher).await?,
+    pub async fn ban_chat_member(&self, chat_id: i64, user_id: i64) -> Result<bool> {
+        let payload = Payload::BanChatMember(BanChatMemberPayload { chat_id, user_id });
+        match self.post(&payload).await? {
+            Response::Success(response) => Ok(response.ok && response.result),
+            _ => Err(anyhow!("Unexpected result response for banChatMember")),
+        }
     }
-    Ok(())
+
+    pub async fn delete_message(&self, chat_id: i64, message_id: i64) -> Result<bool> {
+        let payload = Payload::DeleteMessage(DeleteMessagePayload {
+            chat_id,
+            message_id,
+        });
+        match self.post(&payload).await? {
+            Response::Success(response) => Ok(response.ok && response.result),
+            _ => Err(anyhow!("Unexpected result response for deleteMessage")),
+        }
+    }
+
+    pub async fn set_webhook(&self, secret_token: &str) -> Result<bool> {
+        let url = env::var("TELEGRAM_WEBHOOK_URL")
+            .map_err(|_| anyhow!("Environment variable TELEGRAM_WEBHOOK_URL not found."))?;
+        let secret_token = secret_token.to_string();
+        log::info!("Setting webhook to: {url}");
+        let payload = Payload::SetWebhook(SetWebhookPayload {
+            url: url.clone(),
+            max_connections: DEFAULT_MAX_CONNECTIONS,
+            allowed_updates: DEFAULT_ALLOWED_UPDATES
+                .iter()
+                .map(|&update| update.to_string())
+                .collect(),
+            secret_token,
+        });
+        match self.post(&payload).await? {
+            Response::Success(response) => Ok(response.ok && response.result),
+            _ => Err(anyhow!("Unexpected result response for setWebhook")),
+        }
+    }
+
+    pub async fn delete_webhook(&self) -> Result<bool> {
+        let payload = Payload::DeleteWebhook(DeleteWebhookPayload {
+            drop_pending_updates: false,
+        });
+        log::info!("Deleting webhook");
+        match self.post(&payload).await? {
+            Response::Success(response) => Ok(response.ok && response.result),
+            _ => Err(anyhow!("Unexpected result response for deleteWebhook")),
+        }
+    }
 }

@@ -1,4 +1,3 @@
-use airnope::{telegram, telegram::AirNope};
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Commands};
@@ -9,6 +8,7 @@ mod cache;
 mod cli;
 mod demo;
 mod repl;
+mod webhook;
 
 const DEFAULT_LOG_LEVEL: &str = "INFO";
 
@@ -28,24 +28,12 @@ fn init_log() -> Result<()> {
     Ok(())
 }
 
-fn detect_mode(arg: Option<AirNope>) -> AirNope {
-    if let Some(mode) = arg {
-        return mode;
-    }
-    if env::var("HOST").is_ok() && env::var("PORT").is_ok() {
-        log::info!("HOST and PORT are set, so starting as webhook server");
-        AirNope::Webhook
-    } else {
-        AirNope::LongPooling
-    }
-}
-
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     init_log()?;
     let args = Cli::parse();
     match args.command {
-        Commands::Bot { mode } => telegram::run(detect_mode(mode)).await,
+        Commands::Bot => webhook::run().await,
         Commands::Repl => repl::run().await,
         Commands::Demo => demo::run().await,
         Commands::Download => cache::download_all().await,

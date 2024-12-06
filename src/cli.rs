@@ -1,4 +1,3 @@
-use airnope::telegram::AirNope;
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -11,10 +10,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Start AirNope bot
-    Bot {
-        #[clap(long, short)]
-        mode: Option<AirNope>,
-    },
+    Bot,
     /// Runs benchmark of the zero-shot classification model (accepts labels as arguments)
     Bench {
         /// One or more label sets to benchmark  (separate different labels in a set using commas)

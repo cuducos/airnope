@@ -3,31 +3,27 @@
 ## Requirements
 
 * [`rustup`](https://www.rust-lang.org/tools/install)
-* an environment variable called `TELOXIDE_TOKEN` with the [Telegram API token](https://core.telegram.org/bots/#how-do-i-create-a-bot).
+* two environment variables:
+    * `TELEGRAM_BOT_TOKEN` with the [Telegram API token](https://core.telegram.org/bots/#how-do-i-create-a-bot)
+    * `TELEGRAM_WEBHOOK_URL` with the publicly accessible URL for your bot (for example, `https://my.bot`)
 
 ## Running the bot
 
-The bot can be ran as a webhook or using the [long pooling strategy](https://core.telegram.org/bots/api#getupdates):
+The bot runs as a webhook:
 
 ```console
-$ cargo run -- bot --mode webhook
-$ cargo run -- bot --mode long-pooling
+$ cargo run -- bot
 ```
 
-If there is no flag `--mode`:
+AirNope register its URL (and secret token) with Telegram servers. During a graceful shutdown, AirNope [removes the webhook](https://core.telegram.org/bots/api#deletewebhook) from Telegram servers.
 
-* It starts as a webhook if both `PORT` and `HOST` environment variables are set
-* It starts using the long pooling strategy otherwise
+### Secret token
 
-### Webhook
+AirNope automatically creates a random [secret token](https://core.telegram.org/bots/api#setwebhook) each time it starts, sharing it with Telegram and habndling the appropriated headers of incoming requests. If you want to set a custom secret token, set the environment variable `TELEGRAM_WEBHOOK_SECRET_TOKEN` (useful if running more than one instance of the web server).
 
-When running as webhook, AirNope register its URL (and secret token) with Telegram servers. During a graceful shutdown, AirNope [removes the webhook](https://core.telegram.org/bots/api#deletewebhook) from Telegram servers, so you can go back to long pooling if needed.
+### Bind
 
-#### Secret token
-
-AirNope automatically creates a random [secret token](https://core.telegram.org/bots/api#setwebhook) each time it starts, sharing it with Telegram and habndling the appropriated headers of incoming requests. If you want to set a custom secret token, set the environment variable `TELEGRAM_WEBHOOK_SECRET_TOKEN` (useful if running more than one instance of the web server). According to Telegram:
-
-> 1-256 characters. Only characters `A-Z`, `a-z`, `0-9`, `_ and `-` are allowed.
+You can use the `PORT` environment variable to specify a different port, but the default binding is `0.0.0.0:8000`.
 
 ## Running the REPL
 

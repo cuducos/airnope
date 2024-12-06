@@ -15,13 +15,14 @@ futures = "0.3.31"
 log = "0.4.22"
 moka = { version = "0.12.8", features = ["future"] }
 pretty_env_logger = "0.5.0"
+rand = "0.8.5"
 rayon = "1.10.0"
 regex = "1.11.1"
+reqwest = { version = "0.12.9", features = ["gzip", "json", "rustls-tls"] }
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
-serde = "1.0.215"
-teloxide = { version = "0.13.0", features = ["ctrlc_handler", "webhooks-axum"] }
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
 tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros", "fs", "rt"] }
-url = "2.5.4"
 walkdir = "2.5.0"
 
 [profile.release]
