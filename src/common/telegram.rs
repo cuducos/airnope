@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 const TELEGRAM_API_URL: &str = "https://api.telegram.org/bot";
-const DEFAULT_MAX_CONNECTIONS: u8 = 42;
+const DEFAULT_MAX_CONNECTIONS: u8 = 100;
 const DEFAULT_REACTION: &str = "👀";
 const DEFAULT_ALLOWED_UPDATES: &[&str] = &[
     "message",
