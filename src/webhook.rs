@@ -137,6 +137,7 @@ pub async fn run() -> Result<()> {
         env::var("TELEGRAM_WEBHOOK_SECRET_TOKEN").unwrap_or_else(|_| random_webhook_secret());
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let client = Client::new()?;
+    client.delete_webhook().await?;
     client.set_webhook(secret.as_str()).await?;
     HttpServer::new(move || {
         App::new()
