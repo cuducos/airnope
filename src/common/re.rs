@@ -30,6 +30,7 @@ pub struct RegularExpression {
     reward: Regex,
     crypto: Regex,
     opportunity: Regex,
+    network: Regex,
     cleanup: Regex,
 }
 
@@ -60,6 +61,7 @@ impl RegularExpression {
         let reward = to_regex([R, E, W, A, R, D])?;
         let crypto = to_regex([C, R, Y, P, T, O])?;
         let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T, Y])?;
+        let network = to_regex([N, E, T, W, O, R, K])?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
@@ -70,6 +72,7 @@ impl RegularExpression {
             reward,
             crypto,
             opportunity,
+            network,
             cleanup,
         })
     }
@@ -79,6 +82,7 @@ impl RegularExpression {
         let result = self.airdrop.is_match(cleaned.as_str())
             || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()))
             || (self.wallet.is_match(cleaned.as_str()) && self.reward.is_match(cleaned.as_str()))
+            || (self.token.is_match(cleaned.as_str()) && self.network.is_match(cleaned.as_str()))
             || (self.claim.is_match(cleaned.as_str()) && self.swap.is_match(cleaned.as_str()))
             || (self.crypto.is_match(cleaned.as_str())
                 && self.opportunity.is_match(cleaned.as_str()));
