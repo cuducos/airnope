@@ -28,4 +28,6 @@ pub enum Commands {
         #[clap(long, short, default_value_t = false)]
         dry_run: bool,
     },
+    /// Remove the bot webhook from Telegram's server
+    RemoveWebhook,
 }

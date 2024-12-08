@@ -149,6 +149,11 @@ pub async fn run() -> Result<()> {
     .bind((DEFAULT_HOST_IP, port))?
     .run()
     .await?;
+    Ok(())
+}
+
+pub async fn remove() -> Result<()> {
+    let client = Client::new()?;
     client.delete_webhook().await?;
     Ok(())
 }

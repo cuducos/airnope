@@ -15,7 +15,7 @@ The bot runs as a webhook:
 $ cargo run -- bot
 ```
 
-AirNope register its URL (and secret token) with Telegram servers. During a graceful shutdown, AirNope [removes the webhook](https://core.telegram.org/bots/api#deletewebhook) from Telegram servers.
+AirNope register its URL (and secret token) with Telegram servers.
 
 ### Secret token
 

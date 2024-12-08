@@ -34,6 +34,7 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command {
         Commands::Bot => webhook::run().await,
+        Commands::RemoveWebhook => webhook::remove().await,
         Commands::Repl => repl::run().await,
         Commands::Demo => demo::run().await,
         Commands::Download => cache::download_all().await,
