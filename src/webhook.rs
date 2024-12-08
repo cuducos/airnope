@@ -145,6 +145,7 @@ pub async fn run() -> Result<()> {
             .route("/", web::post().to(handler))
             .route("/health", web::get().to(health))
     })
+    .workers(16)
     .bind((DEFAULT_HOST_IP, port))?
     .run()
     .await?;
