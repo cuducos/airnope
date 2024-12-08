@@ -141,6 +141,12 @@ impl Client {
             .await
             .context("Error reading response from {endpoint}")?;
         if !status.is_success() {
+            if endpoint == "deleteMessage" && body.contains("message to delete not found") {
+                return Ok(Response::Success(SuccessResponse {
+                    ok: true,
+                    result: true,
+                }));
+            }
             return Err(anyhow!("Request to {endpoint} failed: [{status}] {body}",));
         }
         match payload {
