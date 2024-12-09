@@ -38,6 +38,20 @@ struct Message {
 }
 
 impl Message {
+    async fn is_spam(&self, embeddings: Arc<Mutex<Embeddings>>) -> Result<bool> {
+        if let Some(txt) = &self.text {
+            match is_spam(&embeddings, txt.as_str()).await {
+                Ok(guess) => {
+                    return Ok(guess.is_spam);
+                }
+                Err(e) => {
+                    log::error!("Error processing message: {}", e);
+                }
+            }
+        }
+        Ok(false)
+    }
+
     async fn mark_as_spam(&self) -> Result<()> {
         let client = Client::new()?;
         if client.is_admin(self.chat.id, self.from.id).await? {
@@ -78,6 +92,14 @@ impl Update {
         .find_map(|&msg| msg.as_ref())
         .ok_or(anyhow!("Could not find message in update payload"))
     }
+
+    async fn is_spam(&self, embeddings: Arc<Mutex<Embeddings>>) -> Result<bool> {
+        self.message()?.is_spam(embeddings).await
+    }
+
+    async fn mark_as_spam(&self) -> Result<()> {
+        self.message()?.mark_as_spam().await
+    }
 }
 
 async fn health() -> HttpResponse {
@@ -107,41 +129,20 @@ async fn handler(
             );
             HttpResponse::BadRequest().finish()
         }
-        Ok(update) => {
-            let message = match update.message() {
-                Ok(msg) => msg,
-                Err(e) => {
-                    log::error!(
-                        "Error processing update: {}\n{}",
-                        e,
-                        String::from_utf8_lossy(&body)
-                    );
-                    return HttpResponse::BadRequest().finish();
+        Ok(update) => match update.is_spam(embeddings.get_ref().clone()).await {
+            Ok(false) => HttpResponse::Ok().finish(),
+            Ok(true) => {
+                if let Err(e) = update.mark_as_spam().await {
+                    log::error!("Error marking message as spam: {}", e);
+                    return HttpResponse::InternalServerError().finish();
                 }
-            };
-            match &message.text {
-                None => HttpResponse::Ok().finish(),
-                Some(text) => {
-                    let result = match is_spam(&embeddings, text.as_str()).await {
-                        Ok(guess) => guess,
-                        Err(e) => {
-                            log::error!("Error processing message: {}", e);
-                            return HttpResponse::InternalServerError().finish();
-                        }
-                    };
-                    if !result.is_spam {
-                        return HttpResponse::Ok().finish();
-                    }
-                    match message.mark_as_spam().await {
-                        Ok(_) => HttpResponse::Ok().finish(),
-                        Err(e) => {
-                            log::error!("Error marking message as spam: {}", e);
-                            HttpResponse::InternalServerError().finish()
-                        }
-                    }
-                }
+                HttpResponse::Ok().finish()
             }
-        }
+            Err(e) => {
+                log::error!("Error checking if message is spam: {}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        },
     }
 }
 
