@@ -87,7 +87,6 @@ async fn health() -> HttpResponse {
 async fn handler(
     embeddings: web::Data<Arc<Mutex<Embeddings>>>,
     secret: web::Data<Arc<String>>,
-    update: web::Json<Update>,
     request: HttpRequest,
     body: Bytes,
 ) -> HttpResponse {
@@ -99,32 +98,44 @@ async fn handler(
     if secret.as_str() != token {
         return HttpResponse::Unauthorized().finish();
     }
-    let message = match update.message() {
-        Ok(msg) => msg,
+    match serde_json::from_slice::<Update>(&body) {
         Err(e) => {
             log::error!(
-                "Error processing update: {}\n{}",
+                "Error parsing update: {}\n{}",
                 e,
                 String::from_utf8_lossy(&body)
             );
-            return HttpResponse::BadRequest().finish();
+            HttpResponse::BadRequest().finish()
         }
-    };
-    let result = match is_spam(&embeddings, message.text.as_str()).await {
-        Ok(guess) => guess,
-        Err(e) => {
-            log::error!("Error processing message: {}", e);
-            return HttpResponse::InternalServerError().finish();
-        }
-    };
-    if !result.is_spam {
-        return HttpResponse::Ok().finish();
-    }
-    match message.mark_as_spam().await {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => {
-            log::error!("Error marking message as spam: {}", e);
-            HttpResponse::InternalServerError().finish()
+        Ok(update) => {
+            let message = match update.message() {
+                Ok(msg) => msg,
+                Err(e) => {
+                    log::error!(
+                        "Error processing update: {}\n{}",
+                        e,
+                        String::from_utf8_lossy(&body)
+                    );
+                    return HttpResponse::BadRequest().finish();
+                }
+            };
+            let result = match is_spam(&embeddings, message.text.as_str()).await {
+                Ok(guess) => guess,
+                Err(e) => {
+                    log::error!("Error processing message: {}", e);
+                    return HttpResponse::InternalServerError().finish();
+                }
+            };
+            if !result.is_spam {
+                return HttpResponse::Ok().finish();
+            }
+            match message.mark_as_spam().await {
+                Ok(_) => HttpResponse::Ok().finish(),
+                Err(e) => {
+                    log::error!("Error marking message as spam: {}", e);
+                    HttpResponse::InternalServerError().finish()
+                }
+            }
         }
     }
 }
