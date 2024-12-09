@@ -34,7 +34,7 @@ struct Message {
     message_id: i64,
     chat: UserOrChat,
     from: UserOrChat,
-    text: String,
+    text: Option<String>,
 }
 
 impl Message {
@@ -119,21 +119,26 @@ async fn handler(
                     return HttpResponse::BadRequest().finish();
                 }
             };
-            let result = match is_spam(&embeddings, message.text.as_str()).await {
-                Ok(guess) => guess,
-                Err(e) => {
-                    log::error!("Error processing message: {}", e);
-                    return HttpResponse::InternalServerError().finish();
-                }
-            };
-            if !result.is_spam {
-                return HttpResponse::Ok().finish();
-            }
-            match message.mark_as_spam().await {
-                Ok(_) => HttpResponse::Ok().finish(),
-                Err(e) => {
-                    log::error!("Error marking message as spam: {}", e);
-                    HttpResponse::InternalServerError().finish()
+            match &message.text {
+                None => HttpResponse::Ok().finish(),
+                Some(text) => {
+                    let result = match is_spam(&embeddings, text.as_str()).await {
+                        Ok(guess) => guess,
+                        Err(e) => {
+                            log::error!("Error processing message: {}", e);
+                            return HttpResponse::InternalServerError().finish();
+                        }
+                    };
+                    if !result.is_spam {
+                        return HttpResponse::Ok().finish();
+                    }
+                    match message.mark_as_spam().await {
+                        Ok(_) => HttpResponse::Ok().finish(),
+                        Err(e) => {
+                            log::error!("Error marking message as spam: {}", e);
+                            HttpResponse::InternalServerError().finish()
+                        }
+                    }
                 }
             }
         }
