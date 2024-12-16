@@ -9,7 +9,7 @@ actix-cors = "0.7.0"
 actix-web = "4.9.0"
 anyhow = "1.0.94"
 clap = { version = "4.5.23", features = ["derive"] }
-colored = "2.1.0"
+colored = "2.2.0"
 dirs = "5.0.1"
 futures = "0.3.31"
 log = "0.4.22"
