@@ -78,15 +78,14 @@ impl RegularExpression {
     }
 
     pub async fn is_spam(&self, txt: &str) -> Result<Guess> {
-        let cleaned = self.cleanup.replace_all(txt, " ").to_string();
-        let result = self.airdrop.is_match(cleaned.as_str())
-            || (self.wallet.is_match(cleaned.as_str()) && self.token.is_match(cleaned.as_str()))
-            || (self.wallet.is_match(cleaned.as_str()) && self.reward.is_match(cleaned.as_str()))
-            || (self.token.is_match(cleaned.as_str()) && self.network.is_match(cleaned.as_str()))
-            || (self.claim.is_match(cleaned.as_str()) && self.swap.is_match(cleaned.as_str()))
-            || (self.crypto.is_match(cleaned.as_str()) && self.reward.is_match(cleaned.as_str()))
-            || (self.crypto.is_match(cleaned.as_str())
-                && self.opportunity.is_match(cleaned.as_str()));
+        let cleaned = self.cleanup.replace_all(txt, " ");
+        let result = self.airdrop.is_match(&cleaned)
+            || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
+            || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
+            || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
+            || (self.claim.is_match(&cleaned) && self.swap.is_match(&cleaned))
+            || (self.crypto.is_match(&cleaned) && self.reward.is_match(&cleaned))
+            || (self.crypto.is_match(&cleaned) && self.opportunity.is_match(&cleaned));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
