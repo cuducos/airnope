@@ -84,6 +84,7 @@ impl RegularExpression {
             || (self.wallet.is_match(cleaned.as_str()) && self.reward.is_match(cleaned.as_str()))
             || (self.token.is_match(cleaned.as_str()) && self.network.is_match(cleaned.as_str()))
             || (self.claim.is_match(cleaned.as_str()) && self.swap.is_match(cleaned.as_str()))
+            || (self.crypto.is_match(cleaned.as_str()) && self.reward.is_match(cleaned.as_str()))
             || (self.crypto.is_match(cleaned.as_str())
                 && self.opportunity.is_match(cleaned.as_str()));
         if result {
