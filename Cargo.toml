@@ -7,7 +7,7 @@ edition = "2021"
 acap = "0.3.0"
 actix-cors = "0.7.0"
 actix-web = "4.9.0"
-anyhow = "1.0.94"
+anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"] }
 colored = "2.2.0"
 dirs = "5.0.1"
