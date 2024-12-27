@@ -23,6 +23,7 @@ const Y: &str = "[yY¥🇾]";
 #[derive(Clone)]
 pub struct RegularExpression {
     airdrop: Regex,
+    cryptocurrency: Regex,
     altcoin: Regex,
     wallet: Regex,
     token: Regex,
@@ -56,6 +57,7 @@ impl RegularExpression {
     pub async fn new() -> Result<Self> {
         let airdrop = to_regex([A, I, R, D, R, O, P])?;
         let altcoin = to_regex([A, L, T, C, O, I, N])?;
+        let cryptocurrency = to_regex([C, R, Y, P, T, O, C, U, R, R, E, N, C, Y])?;
         let wallet = to_regex([W, A, L, L, E, T])?;
         let token = to_regex([T, O, K, E, N])?;
         let claim = to_regex([C, L, A, I, M])?;
@@ -67,6 +69,7 @@ impl RegularExpression {
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
+            cryptocurrency,
             altcoin,
             wallet,
             token,
@@ -83,6 +86,7 @@ impl RegularExpression {
     pub async fn is_spam(&self, txt: &str) -> Result<Guess> {
         let cleaned = self.cleanup.replace_all(txt, " ");
         let result = self.airdrop.is_match(&cleaned)
+            || self.cryptocurrency.is_match(&cleaned)
             || self.altcoin.is_match(&cleaned)
             || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
