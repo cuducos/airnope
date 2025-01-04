@@ -8,17 +8,19 @@ const C: &str = "[cC]";
 const D: &str = "[dԁ🇩]";
 const E: &str = "[eEе3€ℯ🇪]";
 const G: &str = "[gG9🇬]";
-const I: &str = "[іiI1lℹ️🇮]";
+const I: &str = "[іiíÍI1lℹ️🇮]";
 const K: &str = "[kK🇰]";
 const L: &str = "[lL1|ℓ🇱]";
 const M: &str = "[mM]";
 const N: &str = "[nNℕñÑ🇳]";
 const O: &str = "[оo0🅾️🇴]";
 const P: &str = "[рpρϱ🅿️🇵]";
+const Q: &str = "[qQ9🇶]";
 const R: &str = "[рr🇷]";
 const S: &str = "[sSЅ]";
 const T: &str = "[tTТ7†🇹]";
 const U: &str = "[uUµ🇺]";
+const V: &str = "[vV]";
 const W: &str = "[wW🇼]";
 const Y: &str = "[yY¥🇾]";
 
@@ -36,6 +38,9 @@ pub struct RegularExpression {
     opportunity: Regex,
     network: Regex,
     ganar: Regex,
+    invertido: Regex,
+    clic: Regex,
+    aqui: Regex,
     bitcoin: Regex,
     cleanup: Regex,
 }
@@ -71,6 +76,9 @@ impl RegularExpression {
         let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T, Y])?;
         let network = to_regex([N, E, T, W, O, R, K])?;
         let ganar = to_regex([G, A, N, A, R])?;
+        let invertido = to_regex([I, N, V, E, R, T, I, D, O])?;
+        let clic = to_regex([C, L, I, C])?;
+        let aqui = to_regex([A, Q, U, I])?;
         let bitcoin = to_regex([B, I, T, C, O, I, N])?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
@@ -86,6 +94,9 @@ impl RegularExpression {
             opportunity,
             network,
             ganar,
+            invertido,
+            clic,
+            aqui,
             bitcoin,
             cleanup,
         })
@@ -102,6 +113,10 @@ impl RegularExpression {
             || (self.claim.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.opportunity.is_match(&cleaned))
+            || (self.ganar.is_match(&cleaned)
+                && self.invertido.is_match(&cleaned)
+                && self.clic.is_match(&cleaned)
+                && self.aqui.is_match(&cleaned))
             || (self.ganar.is_match(&cleaned) && self.bitcoin.is_match(&cleaned));
         if result {
             log::info!("Message detected as spam by RegularExpression");
