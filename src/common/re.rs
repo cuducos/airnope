@@ -7,6 +7,7 @@ const B: &str = "[bB🇧]";
 const C: &str = "[cC]";
 const D: &str = "[dԁ🇩]";
 const E: &str = "[eEе3€ℯ🇪]";
+const F: &str = "[fF🇫]";
 const G: &str = "[gG9🇬]";
 const I: &str = "[іiíÍI1lℹ️🇮]";
 const K: &str = "[kK🇰]";
@@ -36,6 +37,7 @@ pub struct RegularExpression {
     reward: Regex,
     crypto: Regex,
     opportunity: Regex,
+    finance: Regex,
     network: Regex,
     ganar: Regex,
     invertido: Regex,
@@ -74,6 +76,7 @@ impl RegularExpression {
         let reward = to_regex([R, E, W, A, R, D])?;
         let crypto = to_regex([C, R, Y, P, T, O])?;
         let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T, Y])?;
+        let finance = to_regex([F, I, N, A, N, C, E])?;
         let network = to_regex([N, E, T, W, O, R, K])?;
         let ganar = to_regex([G, A, N, A, R])?;
         let invertido = to_regex([I, N, V, E, R, T, I, D, O])?;
@@ -92,6 +95,7 @@ impl RegularExpression {
             reward,
             crypto,
             opportunity,
+            finance,
             network,
             ganar,
             invertido,
@@ -113,6 +117,8 @@ impl RegularExpression {
             || (self.claim.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.opportunity.is_match(&cleaned))
+            || (self.finance.is_match(&cleaned) && self.reward.is_match(&cleaned))
+            || (self.finance.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.ganar.is_match(&cleaned)
                 && self.invertido.is_match(&cleaned)
                 && self.clic.is_match(&cleaned)
