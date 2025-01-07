@@ -115,6 +115,7 @@ impl RegularExpression {
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.claim.is_match(&cleaned) && self.swap.is_match(&cleaned))
+            || (self.claim.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.opportunity.is_match(&cleaned))
             || (self.finance.is_match(&cleaned) && self.reward.is_match(&cleaned))
