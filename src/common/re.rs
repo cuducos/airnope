@@ -2,9 +2,9 @@ use crate::{truncated, Guess};
 use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 
-const A: &str = "[аa🅰🅰️🇦🇦о]";
+const A: &str = "[аaã🅰🅰️🇦🇦о]";
 const B: &str = "[bB🇧]";
-const C: &str = "[cC]";
+const C: &str = "[cç]";
 const D: &str = "[dԁ🇩]";
 const E: &str = "[eEе3€ℯ🇪]";
 const F: &str = "[fF🇫]";
@@ -27,6 +27,7 @@ const Y: &str = "[yY¥🇾]";
 
 #[derive(Clone)]
 pub struct RegularExpression {
+    // english
     airdrop: Regex,
     cryptocurrency: Regex,
     altcoin: Regex,
@@ -39,11 +40,19 @@ pub struct RegularExpression {
     opportunity: Regex,
     finance: Regex,
     network: Regex,
+    bitcoin: Regex,
+
+    // spanish
     ganar: Regex,
     invertido: Regex,
     clic: Regex,
     aqui: Regex,
-    bitcoin: Regex,
+
+    // portuguese
+    plataforma: Regex,
+    distribuicao: Regex,
+    paga: Regex,
+
     cleanup: Regex,
 }
 
@@ -78,11 +87,14 @@ impl RegularExpression {
         let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T, Y])?;
         let finance = to_regex([F, I, N, A, N, C, E])?;
         let network = to_regex([N, E, T, W, O, R, K])?;
+        let bitcoin = to_regex([B, I, T, C, O, I, N])?;
         let ganar = to_regex([G, A, N, A, R])?;
         let invertido = to_regex([I, N, V, E, R, T, I, D, O])?;
         let clic = to_regex([C, L, I, C])?;
         let aqui = to_regex([A, Q, U, I])?;
-        let bitcoin = to_regex([B, I, T, C, O, I, N])?;
+        let plataforma = to_regex([P, L, A, T, A, F, O, R, M, A])?;
+        let distribuicao = to_regex([D, I, S, T, R, I, B, U, I, C, A, O])?;
+        let paga = to_regex([P, A, G, A])?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
@@ -97,11 +109,14 @@ impl RegularExpression {
             opportunity,
             finance,
             network,
+            bitcoin,
             ganar,
             invertido,
             clic,
             aqui,
-            bitcoin,
+            plataforma,
+            distribuicao,
+            paga,
             cleanup,
         })
     }
@@ -124,7 +139,10 @@ impl RegularExpression {
                 && self.invertido.is_match(&cleaned)
                 && self.clic.is_match(&cleaned)
                 && self.aqui.is_match(&cleaned))
-            || (self.ganar.is_match(&cleaned) && self.bitcoin.is_match(&cleaned));
+            || (self.ganar.is_match(&cleaned) && self.bitcoin.is_match(&cleaned))
+            || (self.plataforma.is_match(&cleaned)
+                && self.distribuicao.is_match(&cleaned)
+                && self.paga.is_match(&cleaned));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
