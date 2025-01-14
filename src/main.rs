@@ -6,7 +6,6 @@ use std::env;
 mod bench;
 mod cache;
 mod cli;
-mod demo;
 mod repl;
 mod webhook;
 
@@ -36,7 +35,6 @@ async fn main() -> Result<()> {
         Commands::Bot => webhook::run().await,
         Commands::RemoveWebhook => webhook::remove().await,
         Commands::Repl => repl::run().await,
-        Commands::Demo => demo::run().await,
         Commands::Download => cache::download_all().await,
         Commands::Bench { label } => bench::run(label).await,
         Commands::CleanCache { dry_run } => cache::clean_rust_bert_cache(dry_run).await,

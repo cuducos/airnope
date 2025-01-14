@@ -19,8 +19,6 @@ pub enum Commands {
     /// Start the REPL for individual message testing
     Repl,
     /// Start the web API used for the online playground
-    Demo,
-    /// Cache the embedding model
     Download,
     /// Clean `rust-bert` cache
     CleanCache {

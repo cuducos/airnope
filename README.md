@@ -54,25 +54,22 @@ We are also considering the creation of a database of spam messages to further e
 
 ### Can I test it to see what messages AirNope would consider spam?
 
-
 Sure!
-
-#### On the web
-
-The easiet way to use the [playground](https://airnope-playground.onrender.com).
 
 #### On your Telegram
 
-The second easiest way is to create a group and [add AirNope](#how-to-use-airnope). Since you would then be the group owner, you will need a second account (friends!) to join the group to see the bot in action.
+The easiest way is to send the message to [`@AirNope_bot`](https://t.me/AirNope_bot). If the messages disappears, it means the bot considered it spam and deleted it; all good otherwise.
 
 #### On your terminal
 
-Alternatively, you can use [Docker](https://docs.docker.com/get-started/) and your terminal to test messages locally. Download the Docker image and start the [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop):
+Alternatively, you can use [Docker](https://docs.docker.com/get-started/) and your terminal to test messages locally. Download the Docker image, start the [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) and type your message followed by the key press `Enter`/`Return`:
 
 ```console
 $ docker pull ghcr.io/cuducos/airnope:main
 $ docker run --rm -it ghcr.io/cuducos/airnope:main airnope repl
 ```
+
+Or, if you like Rust and have `cargo` installed, clone this repo and `cargo run -- repl`.
 
 ### Can I run my own instance of AirNope?
 
