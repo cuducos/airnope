@@ -12,7 +12,7 @@ clap = { version = "4.5.26", features = ["derive"] }
 colored = "3.0.0"
 dirs = "6.0.0"
 futures = "0.3.31"
-log = "0.4.22"
+log = "0.4.25"
 moka = { version = "0.12.10", features = ["future"] }
 pretty_env_logger = "0.5.0"
 rand = "0.8.5"
