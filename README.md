@@ -58,7 +58,7 @@ Sure!
 
 #### On your Telegram
 
-The easiest way is to send the message to [`@AirNope_bot`](https://t.me/AirNope_bot). If the messages disappears, it means the bot considered it spam and deleted it; all good otherwise.
+The easiest way is to send the message to [`@airnope_bot`](https://t.me/airnope_bot). If the messages disappears, it means the bot considered it spam and deleted it; all good otherwise.
 
 #### On your terminal
 
