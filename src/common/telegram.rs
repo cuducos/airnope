@@ -143,7 +143,8 @@ impl Client {
         if !status.is_success() {
             if endpoint == "deleteMessage"
                 && (body.contains("message to delete not found")
-                    || body.contains("message to react not found"))
+                    || body.contains("message to react not found")
+            || body.contains("can't ban members in private chats"))
             {
                 return Ok(Response::Success(SuccessResponse {
                     ok: true,
