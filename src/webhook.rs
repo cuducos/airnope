@@ -1,4 +1,5 @@
 use actix_web::{
+    middleware::Logger,
     web::{self, Bytes},
     App, HttpRequest, HttpResponse, HttpServer,
 };
@@ -158,6 +159,7 @@ pub async fn run() -> Result<()> {
     client.set_webhook(secret.as_str()).await?;
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(web::Data::new(embeddings.clone()))
             .app_data(web::Data::new(Arc::new(secret.clone())))
             .route("/", web::post().to(handler))
