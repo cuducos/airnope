@@ -9,6 +9,7 @@ const D: &str = "[dԁ🇩]";
 const E: &str = "[eEе3€ℯ🇪]";
 const F: &str = "[fF🇫]";
 const G: &str = "[gG9🇬]";
+const H: &str = "[hH🇭]";
 const I: &str = "[іiíÍI1lℹ️🇮]";
 const K: &str = "[kK🇰]";
 const L: &str = "[lL1|ℓ🇱]";
@@ -27,20 +28,23 @@ const Y: &str = "[yY¥🇾]";
 
 #[derive(Clone)]
 pub struct RegularExpression {
-    // english
+    // generic
     airdrop: Regex,
-    cryptocurrenc: Regex,
+    bitcoin: Regex,
     altcoin: Regex,
+    crypto: Regex,
+    https: Regex,
+
+    // english
+    cryptocurrenc: Regex,
     wallet: Regex,
     token: Regex,
     claim: Regex,
     swap: Regex,
     reward: Regex,
-    crypto: Regex,
     opportunity: Regex,
     finance: Regex,
     network: Regex,
-    bitcoin: Regex,
 
     // spanish
     ganar: Regex,
@@ -76,18 +80,19 @@ where
 impl RegularExpression {
     pub async fn new() -> Result<Self> {
         let airdrop = to_regex([A, I, R, D, R, O, P])?;
+        let bitcoin = to_regex([B, I, T, C, O, I, N])?;
         let altcoin = to_regex([A, L, T, C, O, I, N])?;
+        let crypto = to_regex([C, R, Y, P, T, O])?;
+        let https = to_regex([H, T, T, P, S])?;
         let cryptocurrenc = to_regex([C, R, Y, P, T, O, C, U, R, R, E, N, C])?;
         let wallet = to_regex([W, A, L, L, E, T])?;
         let token = to_regex([T, O, K, E, N])?;
         let claim = to_regex([C, L, A, I, M])?;
         let swap = to_regex([S, W, A, P])?;
         let reward = to_regex([R, E, W, A, R, D])?;
-        let crypto = to_regex([C, R, Y, P, T, O])?;
         let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T, Y])?;
         let finance = to_regex([F, I, N, A, N, C, E])?;
         let network = to_regex([N, E, T, W, O, R, K])?;
-        let bitcoin = to_regex([B, I, T, C, O, I, N])?;
         let ganar = to_regex([G, A, N, A, R])?;
         let invertido = to_regex([I, N, V, E, R, T, I, D, O])?;
         let clic = to_regex([C, L, I, C])?;
@@ -98,18 +103,19 @@ impl RegularExpression {
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
-            cryptocurrenc,
+            bitcoin,
             altcoin,
+            crypto,
+            https,
+            cryptocurrenc,
             wallet,
             token,
             claim,
             swap,
             reward,
-            crypto,
             opportunity,
             finance,
             network,
-            bitcoin,
             ganar,
             invertido,
             clic,
@@ -140,6 +146,7 @@ impl RegularExpression {
                 && self.clic.is_match(&cleaned)
                 && self.aqui.is_match(&cleaned))
             || (self.ganar.is_match(&cleaned) && self.bitcoin.is_match(&cleaned))
+            || (self.bitcoin.is_match(&cleaned) && self.https.is_match(&cleaned))
             || (self.plataforma.is_match(&cleaned)
                 && self.distribuicao.is_match(&cleaned)
                 && self.paga.is_match(&cleaned));
