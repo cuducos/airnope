@@ -7,7 +7,7 @@ edition = "2021"
 acap = "0.3.0"
 actix-web = "4.9.0"
 anyhow = "1.0.95"
-clap = { version = "4.5.27", features = ["derive"] }
+clap = { version = "4.5.26", features = ["derive"] }
 colored = "3.0.0"
 dirs = "6.0.0"
 futures = "0.3.31"
@@ -20,7 +20,7 @@ regex = "1.11.1"
 reqwest = { version = "0.12.12", features = ["gzip", "json", "rustls-tls"] }
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.137"
+serde_json = "1.0.135"
 tokio = { version = "1.43.0", features = ["rt-multi-thread", "macros", "fs", "rt"] }
 walkdir = "2.5.0"
 
