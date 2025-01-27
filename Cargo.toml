@@ -14,7 +14,7 @@ futures = "0.3.31"
 log = "0.4.25"
 moka = { version = "0.12.10", features = ["future"] }
 pretty_env_logger = "0.5.0"
-rand = "0.8.5"
+rand = "0.9.0"
 rayon = "1.10.0"
 regex = "1.11.1"
 reqwest = { version = "0.12.12", features = ["gzip", "json", "rustls-tls"] }
