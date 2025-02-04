@@ -6,7 +6,7 @@ use actix_web::{
 use airnope::{embeddings::Embeddings, is_spam, telegram::Client};
 use anyhow::{anyhow, Result};
 use futures::try_join;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::{env, sync::Arc};
 use tokio::sync::Mutex;
@@ -16,10 +16,10 @@ const DEFAULT_HOST_IP: &str = "0.0.0.0";
 const SECRET_CHARS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
 
 fn random_webhook_secret() -> String {
-    let length = thread_rng().gen_range(128..=256);
+    let length = rng().random_range(128..=256);
     (0..length)
         .map(|_| {
-            let idx = thread_rng().gen_range(0..SECRET_CHARS.len());
+            let idx = rng().random_range(0..SECRET_CHARS.len());
             SECRET_CHARS.chars().nth(idx).unwrap()
         })
         .collect()
