@@ -15,6 +15,10 @@ pub enum Commands {
     Bench {
         /// One or more label sets to benchmark  (separate different labels in a set using commas)
         label: Option<Vec<String>>,
+
+        /// Only runs the benchmark in files that match that pattern
+        #[arg(short, long)]
+        pattern: Option<String>,
     },
     /// Start the REPL for individual message testing
     Repl,

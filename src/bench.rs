@@ -196,7 +196,10 @@ async fn simulate(embeddings: Arc<Mutex<Embeddings>>, input: Input, path: &PathB
     Ok(evaluation.score)
 }
 
-pub async fn run(args: Option<Vec<String>>) -> Result<()> {
+pub async fn run(args: Option<Vec<String>>, pattern: Option<String>) -> Result<()> {
+    let regex = pattern
+        .map(|pattern| regex::Regex::new(&pattern))
+        .transpose()?;
     let labels = labels(args);
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();
@@ -204,6 +207,11 @@ pub async fn run(args: Option<Vec<String>>) -> Result<()> {
         let mut input = Input::new(&embeddings, label.clone()).await?;
         println!("{}", input.to_string(idx).blue().bold());
         for path in paths.iter() {
+            if let Some(r) = &regex {
+                if !r.is_match(path.to_string_lossy().as_ref()) {
+                    continue;
+                }
+            }
             input.push(
                 path,
                 simulate(embeddings.clone(), input.clone(), path).await?,
