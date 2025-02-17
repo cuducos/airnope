@@ -34,6 +34,7 @@ pub struct RegularExpression {
     altcoin: Regex,
     crypto: Regex,
     https: Regex,
+    safeguard: Regex,
 
     // english
     cryptocurrenc: Regex,
@@ -84,6 +85,7 @@ impl RegularExpression {
         let altcoin = to_regex([A, L, T, C, O, I, N])?;
         let crypto = to_regex([C, R, Y, P, T, O])?;
         let https = to_regex([H, T, T, P, S])?;
+        let safeguard = to_regex([S, A, F, E, G, U, A, R, D])?;
         let cryptocurrenc = to_regex([C, R, Y, P, T, O, C, U, R, R, E, N, C])?;
         let wallet = to_regex([W, A, L, L, E, T])?;
         let token = to_regex([T, O, K, E, N])?;
@@ -107,6 +109,7 @@ impl RegularExpression {
             altcoin,
             crypto,
             https,
+            safeguard,
             cryptocurrenc,
             wallet,
             token,
@@ -132,6 +135,7 @@ impl RegularExpression {
         let result = self.airdrop.is_match(&cleaned)
             || self.cryptocurrenc.is_match(&cleaned)
             || self.altcoin.is_match(&cleaned)
+            || self.safeguard.is_match(&cleaned)
             || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))

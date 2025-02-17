@@ -2,6 +2,9 @@
 
 A simple, silent bot that keeps [Telegram](https://telegram.org/) groups free from crypto airdrop spams.
 
+> [!NOTE]
+> AirNope will temporarily remove _Safeguard_ spam because it is becoming as annoying as crypto spam, and it is recognized as a scam.
+
 ## What is AirNope?
 
 ### What it does
@@ -32,7 +35,7 @@ subgraph AirNope
 end
 ```
 
-If the user posting the message is the owner or an admin of the group, AirNop just rects with 👀 instead.
+If the user posting the message is the group's owner or an admin, AirNop just reacts with 👀 instead.
 
 #### What it does not do
 
@@ -48,9 +51,9 @@ If the user posting the message is the owner or an admin of the group, AirNop ju
 
 ### Is there a privacy policy?</summary>
 
-AirNope is designed to detect spam messages, and in some cases, it might log them for debugging purposes. While logging these messages, there is a possibility that personally identifiable information (PII) might be inadvertently captured. We understand the importance of privacy and are committed to ensuring that any PII collected is not processed or persisted. Logs are temporary and are deleted periodically, either during each release cycle or when the bot is restarted.
+AirNope is designed to detect spam messages and, in some cases, log them for debugging purposes. While logging these messages, personally identifiable information (PII) might be inadvertently captured. We understand the importance of privacy and are committed to ensuring that any PII collected is not processed or persisted. Logs are temporary and are deleted periodically during each release cycle or when the bot is restarted.
 
-We are also considering the creation of a database of spam messages to further enhance our spam detection capabilities. However, due to our concern about user privacy and the potential risk of PII exposure, this initiative is not currently part of our roadmap. We will continue to prioritize privacy and will take all necessary measures to protect user information should this initiative be considered in the future.
+We are also considering creating a database of spam messages to further enhance our spam detection capabilities. However, due to our concern about user privacy and the potential risk of PII exposure, this initiative is not currently part of our roadmap. We will continue to prioritize privacy and take all necessary measures to protect user information should this initiative be considered.
 
 ### Can I test it to see what messages AirNope would consider spam?
 
@@ -58,7 +61,7 @@ Sure!
 
 #### On your Telegram
 
-The easiest way is to send the message to [`@airnope_bot`](https://t.me/airnope_bot). If the messages disappears, it means the bot considered it spam and deleted it; all good otherwise.
+The easiest way is to send the message to [`@airnope_bot`](https://t.me/airnope_bot). If the message disappears, it means the bot considered it spam and deleted it; otherwise, it's all good.
 
 #### On your terminal
 
