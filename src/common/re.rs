@@ -92,7 +92,7 @@ impl RegularExpression {
         let claim = to_regex([C, L, A, I, M])?;
         let swap = to_regex([S, W, A, P])?;
         let reward = to_regex([R, E, W, A, R, D])?;
-        let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T, Y])?;
+        let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T])?;
         let finance = to_regex([F, I, N, A, N, C, E])?;
         let network = to_regex([N, E, T, W, O, R, K])?;
         let ganar = to_regex([G, A, N, A, R])?;
