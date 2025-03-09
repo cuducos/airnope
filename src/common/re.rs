@@ -58,6 +58,7 @@ pub struct RegularExpression {
     distribuicao: Regex,
     paga: Regex,
 
+    dollar_word: Regex,
     cleanup: Regex,
 }
 
@@ -102,6 +103,7 @@ impl RegularExpression {
         let plataforma = to_regex([P, L, A, T, A, F, O, R, M, A])?;
         let distribuicao = to_regex([D, I, S, T, R, I, B, U, I, C, A, O])?;
         let paga = to_regex([P, A, G, A])?;
+        let dollar_word = Regex::new(r"\$\w+")?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
@@ -126,6 +128,7 @@ impl RegularExpression {
             plataforma,
             distribuicao,
             paga,
+            dollar_word,
             cleanup,
         })
     }
@@ -138,6 +141,7 @@ impl RegularExpression {
             || self.safeguard.is_match(&cleaned)
             || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
+            || (self.wallet.is_match(&cleaned) && self.dollar_word.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.claim.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.claim.is_match(&cleaned) && self.token.is_match(&cleaned))
