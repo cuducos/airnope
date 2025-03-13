@@ -46,6 +46,8 @@ pub struct RegularExpression {
     opportunity: Regex,
     finance: Regex,
     network: Regex,
+    contract: Regex,
+    fund: Regex,
 
     // spanish
     ganar: Regex,
@@ -96,6 +98,8 @@ impl RegularExpression {
         let opportunity = to_regex([O, P, P, O, R, T, U, N, I, T])?;
         let finance = to_regex([F, I, N, A, N, C, E])?;
         let network = to_regex([N, E, T, W, O, R, K])?;
+        let contract = to_regex([C, O, N, T, R, A, C, T])?;
+        let fund = to_regex([F, U, N, D])?;
         let ganar = to_regex([G, A, N, A, R])?;
         let invertido = to_regex([I, N, V, E, R, T, I, D, O])?;
         let clic = to_regex([C, L, I, C])?;
@@ -121,6 +125,8 @@ impl RegularExpression {
             opportunity,
             finance,
             network,
+            contract,
+            fund,
             ganar,
             invertido,
             clic,
@@ -143,6 +149,8 @@ impl RegularExpression {
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.dollar_word.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
+            || (self.token.is_match(&cleaned) && self.contract.is_match(&cleaned))
+            || (self.token.is_match(&cleaned) && self.fund.is_match(&cleaned))
             || (self.claim.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.claim.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.reward.is_match(&cleaned))
