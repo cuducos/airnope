@@ -25,12 +25,14 @@ const U: &str = "[uUµ🇺]";
 const V: &str = "[vV]";
 const W: &str = "[wW🇼]";
 const Y: &str = "[yY¥🇾]";
+const Z: &str = "[zZ2Ζ🇿]";
 
 #[derive(Clone)]
 pub struct RegularExpression {
     // generic
     airdrop: Regex,
     bitcoin: Regex,
+    btc: Regex,
     altcoin: Regex,
     crypto: Regex,
     https: Regex,
@@ -48,17 +50,27 @@ pub struct RegularExpression {
     network: Regex,
     contract: Regex,
     fund: Regex,
+    transaction: Regex,
+    trading: Regex,
+    trade: Regex,
 
     // spanish
-    ganar: Regex,
-    invertido: Regex,
-    clic: Regex,
-    aqui: Regex,
+    ganar: Regex,     // win, receiving
+    invertido: Regex, // invested
+    clic: Regex,      // click
+    aqui: Regex,      // here
 
     // portuguese
-    plataforma: Regex,
-    distribuicao: Regex,
-    paga: Regex,
+    plataforma: Regex,   // platform
+    distribuicao: Regex, // distribution
+    paga: Regex,         // paid
+
+    // german
+    plattform: Regex,   // platform
+    gewinne: Regex,     // profits
+    eingezahlt: Regex,  // deposited
+    erhalten: Regex,    // received
+    investieren: Regex, // investing
 
     dollar_word: Regex,
     cleanup: Regex,
@@ -85,6 +97,7 @@ impl RegularExpression {
     pub async fn new() -> Result<Self> {
         let airdrop = to_regex([A, I, R, D, R, O, P])?;
         let bitcoin = to_regex([B, I, T, C, O, I, N])?;
+        let btc = to_regex([B, T, C])?;
         let altcoin = to_regex([A, L, T, C, O, I, N])?;
         let crypto = to_regex([C, R, Y, P, T, O])?;
         let https = to_regex([H, T, T, P, S])?;
@@ -100,6 +113,9 @@ impl RegularExpression {
         let network = to_regex([N, E, T, W, O, R, K])?;
         let contract = to_regex([C, O, N, T, R, A, C, T])?;
         let fund = to_regex([F, U, N, D])?;
+        let transaction = to_regex([T, R, A, N, S, A, C, T, I, O, N])?;
+        let trading = to_regex([T, R, A, D, I, N, G])?;
+        let trade = to_regex([T, R, A, D, E])?;
         let ganar = to_regex([G, A, N, A, R])?;
         let invertido = to_regex([I, N, V, E, R, T, I, D, O])?;
         let clic = to_regex([C, L, I, C])?;
@@ -107,11 +123,17 @@ impl RegularExpression {
         let plataforma = to_regex([P, L, A, T, A, F, O, R, M, A])?;
         let distribuicao = to_regex([D, I, S, T, R, I, B, U, I, C, A, O])?;
         let paga = to_regex([P, A, G, A])?;
+        let plattform = to_regex([P, L, A, T, T, F, O, R, M])?;
+        let gewinne = to_regex([G, E, W, I, N, N, E])?;
+        let eingezahlt = to_regex([E, I, N, G, E, Z, A, H, L, T])?;
+        let erhalten = to_regex([E, R, H, A, L, T, E, N])?;
+        let investieren = to_regex([I, N, V, E, S, T, I, E, R, E, N])?;
         let dollar_word = Regex::new(r"\$\w+")?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
             airdrop,
             bitcoin,
+            btc,
             altcoin,
             crypto,
             https,
@@ -127,6 +149,9 @@ impl RegularExpression {
             network,
             contract,
             fund,
+            transaction,
+            trading,
+            trade,
             ganar,
             invertido,
             clic,
@@ -134,6 +159,11 @@ impl RegularExpression {
             plataforma,
             distribuicao,
             paga,
+            plattform,
+            gewinne,
+            eingezahlt,
+            erhalten,
+            investieren,
             dollar_word,
             cleanup,
         })
@@ -157,15 +187,22 @@ impl RegularExpression {
             || (self.crypto.is_match(&cleaned) && self.opportunity.is_match(&cleaned))
             || (self.finance.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.finance.is_match(&cleaned) && self.network.is_match(&cleaned))
+            || (self.transaction.is_match(&cleaned) && self.trading.is_match(&cleaned))
+            || (self.transaction.is_match(&cleaned) && self.trade.is_match(&cleaned))
             || (self.ganar.is_match(&cleaned)
                 && self.invertido.is_match(&cleaned)
                 && self.clic.is_match(&cleaned)
                 && self.aqui.is_match(&cleaned))
             || (self.ganar.is_match(&cleaned) && self.bitcoin.is_match(&cleaned))
             || (self.bitcoin.is_match(&cleaned) && self.https.is_match(&cleaned))
+            || (self.btc.is_match(&cleaned) && self.https.is_match(&cleaned))
             || (self.plataforma.is_match(&cleaned)
                 && self.distribuicao.is_match(&cleaned)
-                && self.paga.is_match(&cleaned));
+                && self.paga.is_match(&cleaned))
+            || (self.plattform.is_match(&cleaned) && self.gewinne.is_match(&cleaned))
+            || (self.plattform.is_match(&cleaned) && self.eingezahlt.is_match(&cleaned))
+            || (self.plattform.is_match(&cleaned) && self.erhalten.is_match(&cleaned))
+            || (self.plattform.is_match(&cleaned) && self.investieren.is_match(&cleaned));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
