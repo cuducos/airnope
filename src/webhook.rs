@@ -163,11 +163,7 @@ async fn handler(
     log::debug!("{contents}");
     match serde_json::from_slice::<Update>(&body) {
         Err(e) => {
-            log::error!(
-                "Error parsing update: {}\n{}",
-                e,
-                contents
-            );
+            log::error!("Error parsing update: {}\n{}", e, contents);
             HttpResponse::BadRequest().finish()
         }
         Ok(mut update) => {

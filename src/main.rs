@@ -17,7 +17,7 @@ fn init_log() -> Result<()> {
         env::set_var("RUST_LOG", DEFAULT_LOG_LEVEL);
         default_used = true;
     }
-    pretty_env_logger::init();
+    env_logger::init();
     if default_used {
         log::info!(
             "No RUST_LOG environment variable found, using default log level: {}",
