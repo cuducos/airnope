@@ -14,6 +14,7 @@ use tokio::sync::Mutex;
 const DEFAULT_PORT: u16 = 8000;
 const DEFAULT_HOST_IP: &str = "0.0.0.0";
 const SECRET_CHARS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
+const DEFAULT_AIRNOPE_HANDLE: &str = "@AirNope_bot";
 
 fn random_webhook_secret() -> String {
     let length = rng().random_range(128..=256);
@@ -53,6 +54,14 @@ impl Message {
         Ok(false)
     }
 
+    async fn acknowledge(&self) -> Result<()> {
+        let client = Client::new()?;
+        client
+            .set_message_reaction(self.chat.id, self.message_id)
+            .await?;
+        Ok(())
+    }
+
     async fn mark_as_spam(&self) -> Result<()> {
         let client = Client::new()?;
         if client.is_admin(self.chat.id, self.from.id).await? {
@@ -77,10 +86,16 @@ struct Update {
     edited_channel_post: Option<Message>,
     business_message: Option<Message>,
     edited_business_message: Option<Message>,
+    reply_to_message: Option<Message>,
 }
 
 impl Update {
-    pub fn message(&self) -> Result<&Message> {
+    pub async fn message(&self) -> Result<&Message> {
+        if self.is_tagging_airnope().await? {
+            if let Some(msg) = self.reply_to_message.as_ref() {
+                return Ok(msg);
+            }
+        }
         [
             &self.message,
             &self.edited_message,
@@ -95,11 +110,26 @@ impl Update {
     }
 
     async fn is_spam(&self, embeddings: Arc<Mutex<Embeddings>>) -> Result<bool> {
-        self.message()?.is_spam(embeddings).await
+        self.message().await?.is_spam(embeddings).await
     }
 
     async fn mark_as_spam(&self) -> Result<()> {
-        self.message()?.mark_as_spam().await
+        self.message().await?.mark_as_spam().await
+    }
+
+    async fn is_tagging_airnope(&self) -> Result<bool> {
+        let mut result = false;
+        if let Some(msg) = self.message.as_ref() {
+            let handle = env::var("AIRNOPE_HANDLE").unwrap_or(DEFAULT_AIRNOPE_HANDLE.to_string());
+            result = msg
+                .text
+                .as_ref()
+                .is_some_and(|txt| txt.to_lowercase() == handle.to_lowercase());
+            if result {
+                msg.acknowledge().await?;
+            }
+        }
+        Ok(result)
     }
 }
 

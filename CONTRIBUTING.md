@@ -3,9 +3,11 @@
 ## Requirements
 
 * [`rustup`](https://www.rust-lang.org/tools/install)
-* two environment variables:
+* Two environment variables:
     * `TELEGRAM_BOT_TOKEN` with the [Telegram API token](https://core.telegram.org/bots/#how-do-i-create-a-bot)
     * `TELEGRAM_WEBHOOK_URL` with the publicly accessible URL for your bot (for example, `https://my.bot`)
+
+Optionally, customize the AirNope's handle used when users tag it to request a message review by setting `AIRNOPE_HANDLE` (default: `@AirNope_bot`).
 
 ## Running the bot
 

@@ -82,3 +82,7 @@ Absolutely!
 2. Deploy the Docker image `ghcr.io/cuducos/airnope:main` to a publicly accessible URL having two environment variables:
    1. `TELEGRAM_BOT_TOKEN` with your bot's token
    1. `TELEGRAM_WEBHOOK_URL` with your public URL (for example, `https://my.bot`)
+
+### I think AirNope missed a message that might be spam, can I ask it to check a specific message?
+
+Yes, just reply that message with `@AirNope_bot` (no spaces or extra characters).
