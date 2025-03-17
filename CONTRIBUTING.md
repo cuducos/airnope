@@ -21,7 +21,7 @@ AirNope register its URL (and secret token) with Telegram servers.
 
 ### Secret token
 
-AirNope automatically creates a random [secret token](https://core.telegram.org/bots/api#setwebhook) each time it starts, sharing it with Telegram and habndling the appropriated headers of incoming requests. If you want to set a custom secret token, set the environment variable `TELEGRAM_WEBHOOK_SECRET_TOKEN` (useful if running more than one instance of the web server).
+AirNope automatically creates a random [secret token](https://core.telegram.org/bots/api#setwebhook) each time it starts, sharing it with Telegram and handling the appropriate headers of incoming requests. If you want to set a custom secret token, set the environment variable `TELEGRAM_WEBHOOK_SECRET_TOKEN` (useful if running more than one instance of the web server).
 
 ### Bind
 
@@ -76,7 +76,7 @@ $ cargo run -- bench "airdop spam" "generic spam offering crypto airdrop"
 To test combined labels, separate them with commas inside the quotes, for example:
 
 ```console
-$ cargo run --bin airnope-bench "airdop spam" "generic spam, crypto airdrop offer"
+$ cargo run -- bench "airdop spam" "generic spam, crypto airdrop offer"
 ```
 
 ## Before opening a PR
