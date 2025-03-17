@@ -87,12 +87,15 @@ struct Update {
     business_message: Option<Message>,
     edited_business_message: Option<Message>,
     reply_to_message: Option<Message>,
+    current_bot_handle: Option<String>,
 }
 
 impl Update {
     pub async fn message(&self) -> Result<&Message> {
         if self.is_tagging_airnope().await? {
+            log::info!("AirNope was tagged in a message");
             if let Some(msg) = self.reply_to_message.as_ref() {
+                log::info!("AirNope was tagged in a reply message");
                 if let Some(txt) = msg.text.as_ref() {
                     log::info!("Message reported: {txt}");
                 }
@@ -123,13 +126,14 @@ impl Update {
     async fn is_tagging_airnope(&self) -> Result<bool> {
         let mut result = false;
         if let Some(msg) = self.message.as_ref() {
-            let handle = env::var("AIRNOPE_HANDLE").unwrap_or(DEFAULT_AIRNOPE_HANDLE.to_string());
-            result = msg
-                .text
-                .as_ref()
-                .is_some_and(|txt| txt.to_lowercase().trim() == handle.to_lowercase());
-            if result {
-                msg.acknowledge().await?;
+            if let Some(handle) = self.current_bot_handle.as_ref() {
+                result = msg
+                    .text
+                    .as_ref()
+                    .is_some_and(|txt| txt.to_lowercase().trim() == handle.to_lowercase());
+                if result {
+                    msg.acknowledge().await?;
+                }
             }
         }
         Ok(result)
@@ -143,6 +147,7 @@ async fn health() -> HttpResponse {
 async fn handler(
     embeddings: web::Data<Arc<Mutex<Embeddings>>>,
     secret: web::Data<Arc<String>>,
+    handle: web::Data<Arc<String>>,
     request: HttpRequest,
     body: Bytes,
 ) -> HttpResponse {
@@ -163,29 +168,32 @@ async fn handler(
             );
             HttpResponse::BadRequest().finish()
         }
-        Ok(update) => match update.is_spam(embeddings.get_ref().clone()).await {
-            Ok(false) => HttpResponse::Ok().finish(),
-            Ok(true) => {
-                if let Err(e) = update.mark_as_spam().await {
-                    log::error!("Error marking message as spam: {}", e);
-                    return HttpResponse::InternalServerError().finish();
+        Ok(mut update) => {
+            update.current_bot_handle = Some(handle.as_str().to_string());
+            match update.is_spam(embeddings.get_ref().clone()).await {
+                Ok(false) => HttpResponse::Ok().finish(),
+                Ok(true) => {
+                    if let Err(e) = update.mark_as_spam().await {
+                        log::error!("Error marking message as spam: {}", e);
+                        return HttpResponse::InternalServerError().finish();
+                    }
+                    HttpResponse::Ok().finish()
                 }
-                HttpResponse::Ok().finish()
+                Err(e) => {
+                    log::error!("Error checking if message is spam: {}", e);
+                    HttpResponse::InternalServerError().finish()
+                }
             }
-            Err(e) => {
-                log::error!("Error checking if message is spam: {}", e);
-                HttpResponse::InternalServerError().finish()
-            }
-        },
+        }
     }
 }
 
 pub async fn run() -> Result<()> {
     let port = env::var("PORT")
-        .unwrap_or_else(|_| DEFAULT_PORT.to_string())
+        .unwrap_or(DEFAULT_PORT.to_string())
         .parse::<u16>()?;
-    let secret =
-        env::var("TELEGRAM_WEBHOOK_SECRET_TOKEN").unwrap_or_else(|_| random_webhook_secret());
+    let secret = env::var("TELEGRAM_WEBHOOK_SECRET_TOKEN").unwrap_or(random_webhook_secret());
+    let handle = env::var("AIRNOPE_HANDLE").unwrap_or(DEFAULT_AIRNOPE_HANDLE.to_string());
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let client = Client::new()?;
     client.delete_webhook().await?;
@@ -195,6 +203,7 @@ pub async fn run() -> Result<()> {
             .wrap(Logger::default())
             .app_data(web::Data::new(embeddings.clone()))
             .app_data(web::Data::new(Arc::new(secret.clone())))
+            .app_data(web::Data::new(Arc::new(handle.clone())))
             .route("/", web::post().to(handler))
             .route("/health", web::get().to(health))
     })
