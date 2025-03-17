@@ -159,6 +159,9 @@ async fn handler(
     if secret.as_str() != token {
         return HttpResponse::Unauthorized().finish();
     }
+    if let Ok(contents) = std::str::from_utf8(body.as_ref()) {
+        log::info!("{contents}");
+    }
     match serde_json::from_slice::<Update>(&body) {
         Err(e) => {
             log::error!(
