@@ -177,6 +177,7 @@ impl RegularExpression {
             || self.safeguard.is_match(&cleaned)
             || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
+            || (self.wallet.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.dollar_word.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.contract.is_match(&cleaned))
