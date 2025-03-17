@@ -93,16 +93,19 @@ impl Update {
     pub async fn message(&self) -> Result<&Message> {
         if self.is_tagging_airnope().await? {
             if let Some(msg) = self.reply_to_message.as_ref() {
+                if let Some(txt) = msg.text.as_ref() {
+                    log::info!("Message reported: {txt}");
+                }
                 return Ok(msg);
             }
         }
         [
-            &self.message,
             &self.edited_message,
-            &self.channel_post,
+            &self.message,
             &self.edited_channel_post,
-            &self.business_message,
+            &self.channel_post,
             &self.edited_business_message,
+            &self.business_message,
         ]
         .iter()
         .find_map(|&msg| msg.as_ref())
@@ -124,7 +127,7 @@ impl Update {
             result = msg
                 .text
                 .as_ref()
-                .is_some_and(|txt| txt.to_lowercase() == handle.to_lowercase());
+                .is_some_and(|txt| txt.to_lowercase().trim() == handle.to_lowercase());
             if result {
                 msg.acknowledge().await?;
             }
