@@ -26,6 +26,20 @@ fn random_webhook_secret() -> String {
         .collect()
 }
 
+#[derive(Clone)]
+struct Settings {
+    handle: String,
+    secret: String,
+}
+
+impl Settings {
+    fn new() -> Settings {
+        let secret = env::var("TELEGRAM_WEBHOOK_SECRET_TOKEN").unwrap_or(random_webhook_secret());
+        let handle = env::var("AIRNOPE_HANDLE").unwrap_or(DEFAULT_AIRNOPE_HANDLE.to_string());
+        Settings { handle, secret }
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 struct UserOrChat {
     id: i64,
@@ -37,11 +51,24 @@ struct Message {
     chat: UserOrChat,
     from: UserOrChat,
     text: Option<String>,
+    caption: Option<String>,
+    reply_to_message: Option<Box<Message>>,
 }
 
 impl Message {
+    fn contents(&self) -> Option<String> {
+        let text = vec![self.text.as_deref(), self.caption.as_deref()]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<&str>>();
+        if text.is_empty() {
+            return None;
+        }
+        Some(text.join("\n\n"))
+    }
+
     async fn is_spam(&self, embeddings: Arc<Mutex<Embeddings>>) -> Result<bool> {
-        if let Some(txt) = &self.text {
+        if let Some(txt) = &self.contents() {
             match is_spam(&embeddings, txt.as_str()).await {
                 Ok(guess) => {
                     return Ok(guess.is_spam);
@@ -86,20 +113,16 @@ struct Update {
     edited_channel_post: Option<Message>,
     business_message: Option<Message>,
     edited_business_message: Option<Message>,
-    reply_to_message: Option<Message>,
     current_bot_handle: Option<String>,
 }
 
 impl Update {
     pub async fn message(&self) -> Result<&Message> {
-        if self.is_tagging_airnope().await? {
-            log::info!("AirNope was tagged in a message");
-            if let Some(msg) = self.reply_to_message.as_ref() {
-                log::info!("AirNope was tagged in a reply message");
-                if let Some(txt) = msg.text.as_ref() {
-                    log::info!("Message reported: {txt}");
+        if self.is_tagging_airnope().await {
+            if let Some(msg) = self.message.as_ref() {
+                if let Some(replying_to) = msg.reply_to_message.as_ref() {
+                    return Ok(replying_to);
                 }
-                return Ok(msg);
             }
         }
         [
@@ -123,7 +146,7 @@ impl Update {
         self.message().await?.mark_as_spam().await
     }
 
-    async fn is_tagging_airnope(&self) -> Result<bool> {
+    async fn is_tagging_airnope(&self) -> bool {
         let mut result = false;
         if let Some(msg) = self.message.as_ref() {
             if let Some(handle) = self.current_bot_handle.as_ref() {
@@ -132,11 +155,13 @@ impl Update {
                     .as_ref()
                     .is_some_and(|txt| txt.to_lowercase().trim() == handle.to_lowercase());
                 if result {
-                    msg.acknowledge().await?;
+                    if let Err(error) = msg.acknowledge().await {
+                        log::error!("Error reacting to message tagging AirNope: {}", error)
+                    }
                 }
             }
         }
-        Ok(result)
+        result
     }
 }
 
@@ -146,8 +171,7 @@ async fn health() -> HttpResponse {
 
 async fn handler(
     embeddings: web::Data<Arc<Mutex<Embeddings>>>,
-    secret: web::Data<Arc<String>>,
-    handle: web::Data<Arc<String>>,
+    settings: web::Data<Arc<Settings>>,
     request: HttpRequest,
     body: Bytes,
 ) -> HttpResponse {
@@ -156,18 +180,20 @@ async fn handler(
         .get("X-Telegram-Bot-Api-Secret-Token")
         .map(|v| v.to_str().unwrap_or(""))
         .unwrap_or("");
-    if secret.as_str() != token {
+    if settings.secret.as_str() != token {
         return HttpResponse::Unauthorized().finish();
     }
-    let contents = String::from_utf8_lossy(&body);
-    log::debug!("{contents}");
     match serde_json::from_slice::<Update>(&body) {
         Err(e) => {
-            log::error!("Error parsing update: {}\n{}", e, contents);
+            log::error!(
+                "Error parsing update: {}\n{}",
+                e,
+                String::from_utf8_lossy(&body)
+            );
             HttpResponse::BadRequest().finish()
         }
         Ok(mut update) => {
-            update.current_bot_handle = Some(handle.as_str().to_string());
+            update.current_bot_handle = Some(settings.handle.clone());
             match update.is_spam(embeddings.get_ref().clone()).await {
                 Ok(false) => HttpResponse::Ok().finish(),
                 Ok(true) => {
@@ -190,18 +216,16 @@ pub async fn run() -> Result<()> {
     let port = env::var("PORT")
         .unwrap_or(DEFAULT_PORT.to_string())
         .parse::<u16>()?;
-    let secret = env::var("TELEGRAM_WEBHOOK_SECRET_TOKEN").unwrap_or(random_webhook_secret());
-    let handle = env::var("AIRNOPE_HANDLE").unwrap_or(DEFAULT_AIRNOPE_HANDLE.to_string());
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let client = Client::new()?;
+    let settings = Settings::new();
     client.delete_webhook().await?;
-    client.set_webhook(secret.as_str()).await?;
+    client.set_webhook(settings.secret.as_str()).await?;
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(embeddings.clone()))
-            .app_data(web::Data::new(Arc::new(secret.clone())))
-            .app_data(web::Data::new(Arc::new(handle.clone())))
+            .app_data(web::Data::new(Arc::new(settings.clone())))
             .route("/", web::post().to(handler))
             .route("/health", web::get().to(health))
     })
