@@ -36,6 +36,7 @@ pub struct RegularExpression {
     altcoin: Regex,
     crypto: Regex,
     https: Regex,
+    nft: Regex,
     safeguard: Regex,
 
     // english
@@ -55,10 +56,11 @@ pub struct RegularExpression {
     trade: Regex,
 
     // spanish
-    ganar: Regex,     // win, receiving
-    invertido: Regex, // invested
-    clic: Regex,      // click
-    aqui: Regex,      // here
+    ganar: Regex,   // win, receiving
+    inverti: Regex, // invested
+    fondo: Regex,   // fund
+    clic: Regex,    // click
+    aqui: Regex,    // here
 
     // portuguese
     plataforma: Regex,   // platform
@@ -102,6 +104,7 @@ impl RegularExpression {
         let crypto = to_regex([C, R, Y, P, T, O])?;
         let https = to_regex([H, T, T, P, S])?;
         let safeguard = to_regex([S, A, F, E, G, U, A, R, D])?;
+        let nft = to_regex([N, F, T])?;
         let cryptocurrenc = to_regex([C, R, Y, P, T, O, C, U, R, R, E, N, C])?;
         let wallet = to_regex([W, A, L, L, E, T])?;
         let token = to_regex([T, O, K, E, N])?;
@@ -117,7 +120,8 @@ impl RegularExpression {
         let trading = to_regex([T, R, A, D, I, N, G])?;
         let trade = to_regex([T, R, A, D, E])?;
         let ganar = to_regex([G, A, N, A, R])?;
-        let invertido = to_regex([I, N, V, E, R, T, I, D, O])?;
+        let inverti = to_regex([I, N, V, E, R, T, I])?;
+        let fondo = to_regex([F, O, N, D, O])?;
         let clic = to_regex([C, L, I, C])?;
         let aqui = to_regex([A, Q, U, I])?;
         let plataforma = to_regex([P, L, A, T, A, F, O, R, M, A])?;
@@ -137,6 +141,7 @@ impl RegularExpression {
             altcoin,
             crypto,
             https,
+            nft,
             safeguard,
             cryptocurrenc,
             wallet,
@@ -153,7 +158,8 @@ impl RegularExpression {
             trading,
             trade,
             ganar,
-            invertido,
+            inverti,
+            fondo,
             clic,
             aqui,
             plataforma,
@@ -179,6 +185,7 @@ impl RegularExpression {
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.dollar_word.is_match(&cleaned))
+            || (self.wallet.is_match(&cleaned) && self.nft.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.contract.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.fund.is_match(&cleaned))
@@ -191,9 +198,10 @@ impl RegularExpression {
             || (self.transaction.is_match(&cleaned) && self.trading.is_match(&cleaned))
             || (self.transaction.is_match(&cleaned) && self.trade.is_match(&cleaned))
             || (self.ganar.is_match(&cleaned)
-                && self.invertido.is_match(&cleaned)
+                && self.inverti.is_match(&cleaned)
                 && self.clic.is_match(&cleaned)
                 && self.aqui.is_match(&cleaned))
+            || (self.inverti.is_match(&cleaned) && self.fondo.is_match(&cleaned))
             || (self.ganar.is_match(&cleaned) && self.bitcoin.is_match(&cleaned))
             || (self.bitcoin.is_match(&cleaned) && self.https.is_match(&cleaned))
             || (self.btc.is_match(&cleaned) && self.https.is_match(&cleaned))
