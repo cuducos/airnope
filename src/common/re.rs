@@ -73,6 +73,8 @@ pub struct RegularExpression {
     eingezahlt: Regex,  // deposited
     erhalten: Regex,    // received
     investieren: Regex, // investing
+    auszahlung: Regex,  // payout
+    belohn: Regex,      // reward
 
     dollar_word: Regex,
     cleanup: Regex,
@@ -132,6 +134,8 @@ impl RegularExpression {
         let eingezahlt = to_regex([E, I, N, G, E, Z, A, H, L, T])?;
         let erhalten = to_regex([E, R, H, A, L, T, E, N])?;
         let investieren = to_regex([I, N, V, E, S, T, I, E, R, E, N])?;
+        let auszahlung = to_regex([A, U, S, Z, A, H, L, U, N, G])?;
+        let belohn = to_regex([B, E, L, O, H, N])?;
         let dollar_word = Regex::new(r"\$\w+")?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
@@ -170,6 +174,8 @@ impl RegularExpression {
             eingezahlt,
             erhalten,
             investieren,
+            auszahlung,
+            belohn,
             dollar_word,
             cleanup,
         })
@@ -186,6 +192,7 @@ impl RegularExpression {
             || (self.wallet.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.dollar_word.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.nft.is_match(&cleaned))
+            || (self.network.is_match(&cleaned) && self.nft.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.contract.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.fund.is_match(&cleaned))
@@ -211,7 +218,8 @@ impl RegularExpression {
             || (self.plattform.is_match(&cleaned) && self.gewinne.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.eingezahlt.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.erhalten.is_match(&cleaned))
-            || (self.plattform.is_match(&cleaned) && self.investieren.is_match(&cleaned));
+            || (self.plattform.is_match(&cleaned) && self.investieren.is_match(&cleaned))
+            || (self.auszahlung.is_match(&cleaned) && self.belohn.is_match(&cleaned));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
