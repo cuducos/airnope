@@ -56,9 +56,10 @@ pub struct RegularExpression {
     trade: Regex,
 
     // spanish
-    ganar: Regex,   // win, receiving
+    gana: Regex,    // win, receiving
     inverti: Regex, // invested
     fondo: Regex,   // fund
+    cuenta: Regex,  // account
     clic: Regex,    // click
     aqui: Regex,    // here
 
@@ -121,9 +122,10 @@ impl RegularExpression {
         let transaction = to_regex([T, R, A, N, S, A, C, T, I, O, N])?;
         let trading = to_regex([T, R, A, D, I, N, G])?;
         let trade = to_regex([T, R, A, D, E])?;
-        let ganar = to_regex([G, A, N, A, R])?;
+        let gana = to_regex([G, A, N, A])?;
         let inverti = to_regex([I, N, V, E, R, T, I])?;
         let fondo = to_regex([F, O, N, D, O])?;
+        let cuenta = to_regex([C, U, E, N, T, A])?;
         let clic = to_regex([C, L, I, C])?;
         let aqui = to_regex([A, Q, U, I])?;
         let plataforma = to_regex([P, L, A, T, A, F, O, R, M, A])?;
@@ -161,9 +163,10 @@ impl RegularExpression {
             transaction,
             trading,
             trade,
-            ganar,
+            gana,
             inverti,
             fondo,
+            cuenta,
             clic,
             aqui,
             plataforma,
@@ -204,12 +207,14 @@ impl RegularExpression {
             || (self.finance.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.transaction.is_match(&cleaned) && self.trading.is_match(&cleaned))
             || (self.transaction.is_match(&cleaned) && self.trade.is_match(&cleaned))
-            || (self.ganar.is_match(&cleaned)
+            || (self.gana.is_match(&cleaned)
                 && self.inverti.is_match(&cleaned)
                 && self.clic.is_match(&cleaned)
                 && self.aqui.is_match(&cleaned))
             || (self.inverti.is_match(&cleaned) && self.fondo.is_match(&cleaned))
-            || (self.ganar.is_match(&cleaned) && self.bitcoin.is_match(&cleaned))
+            || (self.inverti.is_match(&cleaned) && self.cuenta.is_match(&cleaned))
+            || (self.gana.is_match(&cleaned) && self.bitcoin.is_match(&cleaned))
+            || (self.gana.is_match(&cleaned) && self.trading.is_match(&cleaned))
             || (self.bitcoin.is_match(&cleaned) && self.https.is_match(&cleaned))
             || (self.btc.is_match(&cleaned) && self.https.is_match(&cleaned))
             || (self.plataforma.is_match(&cleaned)
