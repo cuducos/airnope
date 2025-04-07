@@ -10,7 +10,7 @@ anyhow = "1.0.97"
 clap = { version = "4.5.34", features = ["derive"] }
 colored = "3.0.0"
 dirs = "6.0.0"
-env_logger = "0.11.7"
+env_logger = "0.11.8"
 futures = "0.3.31"
 log = "0.4.27"
 moka = { version = "0.12.10", features = ["future"] }
