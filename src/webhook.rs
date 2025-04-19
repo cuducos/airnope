@@ -63,7 +63,7 @@ struct InlineKeyboard {
 
 #[derive(Deserialize, Serialize)]
 struct ReplyMarkup {
-    inline_keyboard: Option<InlineKeyboard>,
+    inline_keyboard: Option<Vec<InlineKeyboard>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -85,24 +85,33 @@ impl Message {
             .into_iter()
             .flatten()
             .collect::<Vec<&str>>();
-        let extras = vec![
+        let forward = vec![
             self.forward_origin
                 .as_ref()
                 .and_then(|f| f.chat.as_ref().and_then(|c| c.title.as_deref())),
             self.forward_from_chat
                 .as_ref()
                 .and_then(|f| f.title.as_deref()),
-            self.reply_markup
-                .as_ref()
-                .and_then(|r| r.inline_keyboard.as_ref().and_then(|k| k.text.as_deref())),
-            self.reply_markup
-                .as_ref()
-                .and_then(|r| r.inline_keyboard.as_ref().and_then(|k| k.url.as_deref())),
         ]
         .into_iter()
         .flatten()
         .collect::<Vec<&str>>();
-        let merged = text.into_iter().chain(extras).collect::<Vec<&str>>();
+        let buttons = self
+            .reply_markup
+            .as_ref()
+            .and_then(|reply_markup| {
+                reply_markup.inline_keyboard.as_ref().map(|keyboards| {
+                    keyboards
+                        .iter()
+                        .flat_map(|keyboard| {
+                            vec![keyboard.text.as_deref(), keyboard.url.as_deref()]
+                        })
+                        .flatten()
+                        .collect::<Vec<&str>>()
+                })
+            })
+            .unwrap_or_default();
+        let merged: Vec<&str> = [text, forward, buttons].into_iter().flatten().collect();
         if merged.is_empty() {
             return None;
         }
