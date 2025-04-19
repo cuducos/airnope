@@ -183,6 +183,7 @@ async fn handler(
     if settings.secret.as_str() != token {
         return HttpResponse::Unauthorized().finish();
     }
+    log::debug!("Message: {}", String::from_utf8_lossy(&body));
     match serde_json::from_slice::<Update>(&body) {
         Err(e) => {
             log::error!(
