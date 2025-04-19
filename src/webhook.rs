@@ -81,37 +81,35 @@ struct Message {
 
 impl Message {
     fn contents(&self) -> Option<String> {
-        let text = vec![self.text.as_deref(), self.caption.as_deref()]
+        let text = self
+            .text
+            .as_deref()
             .into_iter()
-            .flatten()
-            .collect::<Vec<&str>>();
-        let forward = vec![
-            self.forward_origin
-                .as_ref()
-                .and_then(|f| f.chat.as_ref().and_then(|c| c.title.as_deref())),
-            self.forward_from_chat
-                .as_ref()
-                .and_then(|f| f.title.as_deref()),
-        ]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<&str>>();
+            .chain(self.caption.as_deref());
+        let forward = self
+            .forward_origin
+            .as_ref()
+            .and_then(|f| f.chat.as_ref().and_then(|c| c.title.as_deref()))
+            .into_iter()
+            .chain(
+                self.forward_from_chat
+                    .as_ref()
+                    .and_then(|f| f.title.as_deref()),
+            );
         let buttons = self
             .reply_markup
             .as_ref()
-            .and_then(|reply_markup| {
-                reply_markup.inline_keyboard.as_ref().map(|keyboards| {
-                    keyboards
-                        .iter()
-                        .flat_map(|keyboard| {
-                            vec![keyboard.text.as_deref(), keyboard.url.as_deref()]
-                        })
-                        .flatten()
-                        .collect::<Vec<&str>>()
-                })
-            })
-            .unwrap_or_default();
-        let merged: Vec<&str> = [text, forward, buttons].into_iter().flatten().collect();
+            .into_iter()
+            .flat_map(|reply_markup| reply_markup.inline_keyboard.as_ref())
+            .flat_map(|keyboards| keyboards.iter())
+            .flat_map(|keyboard| {
+                keyboard
+                    .text
+                    .as_deref()
+                    .into_iter()
+                    .chain(keyboard.url.as_deref())
+            });
+        let merged = text.chain(forward).chain(buttons).collect::<Vec<&str>>();
         if merged.is_empty() {
             return None;
         }
