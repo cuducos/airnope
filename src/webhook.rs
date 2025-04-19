@@ -46,6 +46,27 @@ struct UserOrChat {
 }
 
 #[derive(Deserialize, Serialize)]
+struct Chat {
+    title: Option<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct ForwardOrigin {
+    chat: Option<Chat>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct InlineKeyboard {
+    text: Option<String>,
+    url: Option<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct ReplyMarkup {
+    inline_keyboard: Option<InlineKeyboard>,
+}
+
+#[derive(Deserialize, Serialize)]
 struct Message {
     message_id: i64,
     chat: UserOrChat,
@@ -53,6 +74,9 @@ struct Message {
     text: Option<String>,
     caption: Option<String>,
     reply_to_message: Option<Box<Message>>,
+    forward_origin: Option<ForwardOrigin>,
+    forward_from_chat: Option<Chat>,
+    reply_markup: Option<ReplyMarkup>,
 }
 
 impl Message {
@@ -61,10 +85,29 @@ impl Message {
             .into_iter()
             .flatten()
             .collect::<Vec<&str>>();
-        if text.is_empty() {
+        let extras = vec![
+            self.forward_origin
+                .as_ref()
+                .and_then(|f| f.chat.as_ref().and_then(|c| c.title.as_deref())),
+            self.forward_from_chat
+                .as_ref()
+                .and_then(|f| f.title.as_deref()),
+            self.reply_markup
+                .as_ref()
+                .and_then(|r| r.inline_keyboard.as_ref().and_then(|k| k.text.as_deref())),
+            self.reply_markup
+                .as_ref()
+                .and_then(|r| r.inline_keyboard.as_ref().and_then(|k| k.url.as_deref())),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<&str>>();
+        let merged = text.into_iter().chain(extras).collect::<Vec<&str>>();
+        if merged.is_empty() {
             return None;
         }
-        Some(text.join("\n\n"))
+
+        Some(merged.join("\n\n"))
     }
 
     async fn is_spam(&self, embeddings: Arc<Mutex<Embeddings>>) -> Result<bool> {
