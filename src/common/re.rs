@@ -54,6 +54,7 @@ pub struct RegularExpression {
     transaction: Regex,
     trading: Regex,
     trade: Regex,
+    platform: Regex,
 
     // spanish
     gana: Regex,    // win, receiving
@@ -122,6 +123,7 @@ impl RegularExpression {
         let transaction = to_regex([T, R, A, N, S, A, C, T, I, O, N])?;
         let trading = to_regex([T, R, A, D, I, N, G])?;
         let trade = to_regex([T, R, A, D, E])?;
+        let platform = to_regex([P, L, A, T, F, O, R, M])?;
         let gana = to_regex([G, A, N, A])?;
         let inverti = to_regex([I, N, V, E, R, T, I])?;
         let fondo = to_regex([F, O, N, D, O])?;
@@ -163,6 +165,7 @@ impl RegularExpression {
             transaction,
             trading,
             trade,
+            platform,
             gana,
             inverti,
             fondo,
@@ -196,6 +199,7 @@ impl RegularExpression {
             || (self.wallet.is_match(&cleaned) && self.dollar_word.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.nft.is_match(&cleaned))
             || (self.network.is_match(&cleaned) && self.nft.is_match(&cleaned))
+            || (self.platform.is_match(&cleaned) && self.nft.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.contract.is_match(&cleaned))
             || (self.token.is_match(&cleaned) && self.fund.is_match(&cleaned))
