@@ -63,7 +63,7 @@ struct InlineKeyboard {
 
 #[derive(Deserialize, Serialize)]
 struct ReplyMarkup {
-    inline_keyboard: Option<Vec<InlineKeyboard>>,
+    inline_keyboard: Option<Vec<Vec<InlineKeyboard>>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -102,6 +102,7 @@ impl Message {
             .into_iter()
             .flat_map(|reply_markup| reply_markup.inline_keyboard.as_ref())
             .flat_map(|keyboards| keyboards.iter())
+            .flatten()
             .flat_map(|keyboard| {
                 keyboard
                     .text
@@ -290,4 +291,17 @@ pub async fn remove() -> Result<()> {
     let client = Client::new()?;
     client.delete_webhook().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_deserialize_message() {
+        let data = fs::read_to_string("test_data/message.json").unwrap();
+        let message: Message = serde_json::from_str(&data).unwrap();
+        assert_eq!(message.message_id, 88220);
+    }
 }

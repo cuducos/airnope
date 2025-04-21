@@ -42,7 +42,7 @@ pub fn average_without_extremes(scores: &Vec<f32>) -> f32 {
         }
         sum += score;
     }
-    (sum - (min + max)) / (scores.len() as f32 - 2.0)
+    (sum - (min + max)) / ((scores.len() - 2) as f32)
 }
 
 impl ZeroShotClassification {
@@ -103,6 +103,9 @@ mod tests {
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
             let path = entry.path();
+            if path.extension().unwrap() != "txt" {
+                continue;
+            }
             let mut contents = String::new();
             let mut file = fs::File::open(&path).await.unwrap();
             file.read_to_string(&mut contents).await.unwrap();

@@ -1,0 +1,81 @@
+{
+    "message_id": 88220,
+    "from": {
+        "id": 6873835434,
+        "is_bot": false,
+        "first_name": "Safeguard",
+        "username": "Brian7547",
+        "is_premium": true
+    },
+    "chat": {
+        "id": -1001061765207,
+        "title": "Dados Abertos .BR",
+        "username": "dadosabertos",
+        "type": "supergroup"
+    },
+    "date": 1745191530,
+    "forward_origin": {
+        "type": "channel",
+        "chat": {
+            "id": -1002628643078,
+            "title": "Safeguard",
+            "type": "channel"
+        },
+        "message_id": 2,
+        "date": 1745179042
+    },
+    "forward_from_chat": {
+        "id": -1002628643078,
+        "title": "Safeguard",
+        "type": "channel"
+    },
+    "forward_from_message_id": 2,
+    "forward_date": 1745179042,
+    "video": {
+        "duration": 1,
+        "width": 1100,
+        "height": 520,
+        "file_name": "safeguard.mp4",
+        "mime_type": "video/mp4",
+        "thumbnail": {
+            "file_id": "AAMCAQADHQI_SUBXAAEBWJxoBYJqxsK75cdwtvkgFvpKTGXw3wACHgYAAtK0MERgh0u_yYenMQEAB20AAzYE",
+            "file_unique_id": "AQADHgYAAtK0MERy",
+            "file_size": 3515,
+            "width": 320,
+            "height": 151
+        },
+        "thumb": {
+            "file_id": "AAMCAQADHQI_SUBXAAEBWJxoBYJqxsK75cdwtvkgFvpKTGXw3wACHgYAAtK0MERgh0u_yYenMQEAB20AAzYE",
+            "file_unique_id": "AQADHgYAAtK0MERy",
+            "file_size": 3515,
+            "width": 320,
+            "height": 151
+        },
+        "file_id": "BAACAgEAAx0CP0lAVwABAVicaAWCasbCu-XHcLb5IBb6Skxl8N8AAh4GAALStDBEYIdLv8mHpzE2BA",
+        "file_unique_id": "AgADHgYAAtK0MEQ",
+        "file_size": 13000
+    },
+    "caption": "\ud83d\udccdIMPORTANT\ud83d\udccd FOR ALL PARTICIPANTS\n\nThe management of this group has activated the highest level of security. \n\n\u2757\ufe0f\u2757\ufe0fEVERYONE MUST\u2757\ufe0f\u2757\ufe0f - Click the link below to confirm you are not a robot.",
+    "caption_entities": [
+        {
+            "offset": 2,
+            "length": 9,
+            "type": "bold"
+        },
+        {
+            "offset": 117,
+            "length": 13,
+            "type": "bold"
+        }
+    ],
+    "reply_markup": {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "Tap To Verify",
+                    "url": "https://t.me/Safe2guard_orbot/verify"
+                }
+            ]
+        ]
+    }
+}
