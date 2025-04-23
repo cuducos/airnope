@@ -26,3 +26,6 @@ walkdir = "2.5.0"
 
 [profile.release]
 lto = true
+
+[dev-dependencies]
+md5 = "0.7.0"

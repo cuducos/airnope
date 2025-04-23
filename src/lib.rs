@@ -53,6 +53,9 @@ fn truncated(message: &str) -> String {
 mod tests {
     use super::*;
     use embeddings::Embeddings;
+    use std::collections::HashMap;
+    use std::io::Read;
+    use std::path::Path;
     use tokio::{fs, io::AsyncReadExt};
     use zsc::THRESHOLD;
 
@@ -91,6 +94,30 @@ mod tests {
                     THRESHOLD,
                     got.score.unwrap_or(0.0)
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn test_no_duplicate_test_data() {
+        let dir = Path::new("test_data");
+        let mut hashes: HashMap<md5::Digest, String> = HashMap::new();
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.expect("Failed to read entry").path();
+            if !path.is_file() {
+                continue;
+            }
+            let name = path.file_name().unwrap().to_str().unwrap().to_string();
+            let mut contents = Vec::new();
+            std::fs::File::open(path)
+                .unwrap()
+                .read_to_end(&mut contents)
+                .unwrap();
+            let hash = md5::compute(contents);
+            if let Some(existing) = hashes.get(&hash) {
+                panic!("Duplicate file content found: {} and {}", name, existing);
+            } else {
+                hashes.insert(hash, name);
             }
         }
     }
