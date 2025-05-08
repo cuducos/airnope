@@ -38,6 +38,7 @@ pub struct RegularExpression {
     https: Regex,
     nft: Regex,
     safeguard: Regex,
+    somnia: Regex,
 
     // english
     cryptocurrenc: Regex,
@@ -108,6 +109,7 @@ impl RegularExpression {
         let crypto = to_regex([C, R, Y, P, T, O])?;
         let https = to_regex([H, T, T, P, S])?;
         let safeguard = to_regex([S, A, F, E, G, U, A, R, D])?;
+        let somnia = to_regex([S, O, M, N, I, A])?;
         let nft = to_regex([N, F, T])?;
         let cryptocurrenc = to_regex([C, R, Y, P, T, O, C, U, R, R, E, N, C])?;
         let wallet = to_regex([W, A, L, L, E, T])?;
@@ -151,6 +153,7 @@ impl RegularExpression {
             https,
             nft,
             safeguard,
+            somnia,
             cryptocurrenc,
             wallet,
             token,
@@ -193,6 +196,7 @@ impl RegularExpression {
             || self.cryptocurrenc.is_match(&cleaned)
             || self.altcoin.is_match(&cleaned)
             || self.safeguard.is_match(&cleaned)
+            || self.somnia.is_match(&cleaned)
             || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.swap.is_match(&cleaned))
