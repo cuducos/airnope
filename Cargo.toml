@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 acap = "0.4.0"
-actix-web = "4.10.2"
+actix-web = "4.11.0"
 anyhow = "1.0.98"
 clap = { version = "4.5.38", features = ["derive"] }
 colored = "3.0.0"
