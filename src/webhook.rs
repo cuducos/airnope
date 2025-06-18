@@ -51,8 +51,14 @@ struct Chat {
 }
 
 #[derive(Deserialize, Serialize)]
+struct SenderUser {
+    username: Option<String>,
+}
+
+#[derive(Deserialize, Serialize)]
 struct ForwardOrigin {
     chat: Option<Chat>,
+    sender_user: Option<SenderUser>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -119,6 +125,16 @@ impl Message {
     }
 
     async fn is_spam(&self, embeddings: Arc<Mutex<Embeddings>>) -> Result<bool> {
+        if let Some(sender) = self
+            .forward_origin
+            .as_ref()
+            .and_then(|fw| fw.sender_user.as_ref())
+            .and_then(|u| u.username.as_ref())
+        {
+            if sender == "safeguard" {
+                return Ok(true);
+            }
+        }
         if let Some(txt) = &self.contents() {
             match is_spam(&embeddings, txt.as_str()).await {
                 Ok(guess) => {
@@ -300,8 +316,36 @@ mod tests {
 
     #[test]
     fn test_deserialize_message() {
-        let data = fs::read_to_string("test_data/message.json").unwrap();
+        let data = fs::read_to_string("test_data/message_administrator.json").unwrap();
         let message: Message = serde_json::from_str(&data).unwrap();
         assert_eq!(message.message_id, 88220);
+        assert!(message
+            .forward_origin
+            .and_then(|fw| fw.sender_user)
+            .and_then(|u| u.username)
+            .is_none());
+    }
+
+    #[test]
+    fn test_deserialize_message_with_sender() {
+        let data = fs::read_to_string("test_data/message_safeguard.json").unwrap();
+        let message: Message = serde_json::from_str(&data).unwrap();
+        assert_eq!(message.message_id, 204091);
+        assert_eq!(
+            message
+                .forward_origin
+                .and_then(|fw| fw.sender_user)
+                .and_then(|u| u.username)
+                .unwrap(),
+            "safeguard"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_message_from_safeguard_is_spam() {
+        let embeddings = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
+        let data = fs::read_to_string("test_data/message_safeguard.json").unwrap();
+        let message: Message = serde_json::from_str(&data).unwrap();
+        assert!(message.is_spam(embeddings).await.unwrap());
     }
 }

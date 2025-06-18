@@ -1,0 +1,84 @@
+{
+    "message_id": 204091,
+    "from": {
+        "id": 2257484,
+        "is_bot": false,
+        "first_name": "Eduardo",
+        "last_name": "Cuducos",
+        "username": "cuducos",
+        "language_code": "en"
+    },
+    "chat": {
+        "id": 2257484,
+        "first_name": "Eduardo",
+        "last_name": "Cuducos",
+        "username": "cuducos",
+        "type": "private"
+    },
+    "date": 1750258962,
+    "forward_origin": {
+        "type": "user",
+        "sender_user": {
+            "id": 5434266369,
+            "is_bot": true,
+            "first_name": "Safeguard",
+            "username": "safeguard"
+        },
+        "date": 1750194915
+    },
+    "forward_from": {
+        "id": 5434266369,
+        "is_bot": true,
+        "first_name": "Safeguard",
+        "username": "safeguard"
+    },
+    "forward_date": 1750194915,
+    "photo": [
+        {
+            "file_id": "AgACAgIAAxkBAAEDHTtoUtUS6Za53cMvskMqEhxTZBAlIgACp_IxGz9diUoJt4ucc00TSwEAAwIAA3MAAzYE",
+            "file_unique_id": "AQADp_IxGz9diUp4",
+            "file_size": 640,
+            "width": 90,
+            "height": 42
+        },
+        {
+            "file_id": "AgACAgIAAxkBAAEDHTtoUtUS6Za53cMvskMqEhxTZBAlIgACp_IxGz9diUoJt4ucc00TSwEAAwIAA20AAzYE",
+            "file_unique_id": "AQADp_IxGz9diUpy",
+            "file_size": 3834,
+            "width": 320,
+            "height": 151
+        },
+        {
+            "file_id": "AgACAgIAAxkBAAEDHTtoUtUS6Za53cMvskMqEhxTZBAlIgACp_IxGz9diUoJt4ucc00TSwEAAwIAA3gAAzYE",
+            "file_unique_id": "AQADp_IxGz9diUp9",
+            "file_size": 15184,
+            "width": 800,
+            "height": 378
+        },
+        {
+            "file_id": "AgACAgIAAxkBAAEDHTtoUtUS6Za53cMvskMqEhxTZBAlIgACp_IxGz9diUoJt4ucc00TSwEAAwIAA3kAAzYE",
+            "file_unique_id": "AQADp_IxGz9diUp-",
+            "file_size": 20200,
+            "width": 1100,
+            "height": 520
+        }
+    ],
+    "caption": "🔰Security Notice: Verification Needed.  \n\nVerify your account within the next 15 minutes to maintain group access. Unverified users will be automatically removed.  \n\nClick below to confirm you're not a bot.",
+    "caption_entities": [
+        {
+            "offset": 2,
+            "length": 15,
+            "type": "bold"
+        }
+    ],
+    "reply_markup": {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "Proof you're human",
+                    "url": "https://t.me/sasaere_bot/opanavatrushka"
+                }
+            ]
+        ]
+    }
+}
