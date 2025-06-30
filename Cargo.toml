@@ -28,4 +28,4 @@ walkdir = "2.5.0"
 lto = true
 
 [dev-dependencies]
-md5 = "0.7.0"
+md5 = "0.8.0"
