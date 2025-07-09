@@ -76,8 +76,7 @@ impl ZeroShotClassification {
         let result = score > THRESHOLD;
         if result {
             log::info!(
-                "Message detected as spam by ZeroShotClassification (score = {})",
-                score,
+                "Message detected as spam by ZeroShotClassification (score = {score})",
             );
             log::debug!("{}", truncated(txt));
         }
