@@ -141,7 +141,7 @@ impl Message {
                     return Ok(guess.is_spam);
                 }
                 Err(e) => {
-                    log::error!("Error processing message: {}", e);
+                    log::error!("Error processing message: {e}");
                 }
             }
         }
@@ -223,7 +223,7 @@ impl Update {
                     .is_some_and(|txt| txt.to_lowercase().trim() == handle.to_lowercase());
                 if result {
                     if let Err(error) = msg.acknowledge().await {
-                        log::error!("Error reacting to message tagging AirNope: {}", error)
+                        log::error!("Error reacting to message tagging AirNope: {error}")
                     }
                 }
             }
@@ -265,13 +265,13 @@ async fn handler(
                 Ok(false) => HttpResponse::Ok().finish(),
                 Ok(true) => {
                     if let Err(e) = update.mark_as_spam().await {
-                        log::error!("Error marking message as spam: {}", e);
+                        log::error!("Error marking message as spam: {e}");
                         return HttpResponse::InternalServerError().finish();
                     }
                     HttpResponse::Ok().finish()
                 }
                 Err(e) => {
-                    log::error!("Error checking if message is spam: {}", e);
+                    log::error!("Error checking if message is spam: {e}");
                     HttpResponse::InternalServerError().finish()
                 }
             }

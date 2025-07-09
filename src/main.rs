@@ -20,8 +20,7 @@ fn init_log() -> Result<()> {
     env_logger::init();
     if default_used {
         log::info!(
-            "No RUST_LOG environment variable found, using default log level: {}",
-            DEFAULT_LOG_LEVEL
+            "No RUST_LOG environment variable found, using default log level: {DEFAULT_LOG_LEVEL}"
         );
     }
     Ok(())

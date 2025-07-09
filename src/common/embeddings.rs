@@ -78,7 +78,7 @@ mod tests {
     async fn test_embeddings_for() {
         let model = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
         let got = embeddings_for(model, LABELS[0].to_string()).await;
-        assert!(got.is_ok(), "expected no error, got {:?}", got);
+        assert!(got.is_ok(), "expected no error, got {got:?}");
 
         let vector = got.unwrap();
         assert_eq!(

@@ -35,7 +35,7 @@ impl Input {
         let prefix = format!("Alternative {}", idx + 1);
         let base = format!("\n==> {}: {}", prefix, self.labels.join(" + "));
         if idx == 0 {
-            format!("{} (threshold: {:.2})", base, THRESHOLD)
+            format!("{base} (threshold: {THRESHOLD:.2})")
         } else {
             base
         }
@@ -65,20 +65,16 @@ impl Input {
             .fold(f32::INFINITY, |a, &b| a.min(b));
         let output = if not_spam > spam {
             format!(
-                "\n     No possible threshold (maximum not spam = {:.3} and minimum spam = {:.3})",
-                not_spam, spam
+                "\n     No possible threshold (maximum not spam = {not_spam:.3} and minimum spam = {spam:.3})"
             )
             .bold()
             .yellow()
         } else {
-            format!(
-                "\n     Possible threshold between {:.3} and {:.3}",
-                not_spam, spam
-            )
-            .bold()
-            .green()
+            format!("\n     Possible threshold between {not_spam:.3} and {spam:.3}")
+                .bold()
+                .green()
         };
-        println!("{}", output);
+        println!("{output}");
     }
 }
 
@@ -144,7 +140,7 @@ impl Evaluation {
                 output,
                 self.scores
                     .iter()
-                    .map(|&score| format!("{:.3}", score))
+                    .map(|&score| format!("{score:.3}"))
                     .collect::<Vec<String>>()
                     .join(" | ")
             );

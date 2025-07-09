@@ -115,7 +115,7 @@ mod tests {
                 .unwrap();
             let hash = md5::compute(contents);
             if let Some(existing) = hashes.get(&hash) {
-                panic!("Duplicate file content found: {} and {}", name, existing);
+                panic!("Duplicate file content found: {name} and {existing}");
             } else {
                 hashes.insert(hash, name);
             }
