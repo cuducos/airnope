@@ -75,9 +75,7 @@ impl ZeroShotClassification {
         let score = average_without_extremes(&scores);
         let result = score > THRESHOLD;
         if result {
-            log::info!(
-                "Message detected as spam by ZeroShotClassification (score = {score})",
-            );
+            log::info!("Message detected as spam by ZeroShotClassification (score = {score})",);
             log::debug!("{}", truncated(txt));
         }
         Ok(Guess {
