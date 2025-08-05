@@ -20,7 +20,7 @@ regex = "1.11.1"
 reqwest = { version = "0.12.22", features = ["gzip", "json", "rustls-tls"] }
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
+serde_json = "1.0.142"
 tokio = { version = "1.47.1", features = ["rt-multi-thread", "macros", "fs", "rt"] }
 walkdir = "2.5.0"
 
