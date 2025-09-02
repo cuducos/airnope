@@ -17,7 +17,7 @@ moka = { version = "0.12.10", features = ["future"] }
 rand = "0.9.2"
 rayon = "1.10.0"
 regex = "1.11.1"
-reqwest = { version = "0.12.22", features = ["gzip", "json", "rustls-tls"] }
+reqwest = { version = "0.12.23", features = ["gzip", "json", "rustls-tls"] }
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.142"
