@@ -6,21 +6,21 @@ edition = "2021"
 [dependencies]
 acap = "0.4.0"
 actix-web = "4.11.0"
-anyhow = "1.0.99"
-clap = { version = "4.5.46", features = ["derive"] }
+anyhow = "1.0.100"
+clap = { version = "4.5.48", features = ["derive"] }
 colored = "3.0.0"
 dirs = "6.0.0"
 env_logger = "0.11.8"
 futures = "0.3.31"
-log = "0.4.27"
-moka = { version = "0.12.10", features = ["future"] }
+log = "0.4.28"
+moka = { version = "0.12.11", features = ["future"] }
 rand = "0.9.2"
 rayon = "1.11.0"
-regex = "1.11.2"
+regex = "1.11.3"
 reqwest = { version = "0.12.23", features = ["gzip", "json", "rustls-tls"] }
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.143"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
 tokio = { version = "1.47.1", features = ["rt-multi-thread", "macros", "fs", "rt"] }
 walkdir = "2.5.0"
 
