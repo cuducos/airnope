@@ -43,9 +43,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
       - name: Deploy the bot
-        uses: digitalocean/app_action/deploy@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_TOKEN }}
-          project_id: ${{ secrets.DIGITALOCEAN_PROJECT_ID }}
-          app_name: airnope
+        run: flyctl deploy --remote-only --image ghcr.io/cuducos/airnope:main
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
