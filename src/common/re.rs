@@ -56,6 +56,7 @@ pub struct RegularExpression {
     trading: Regex,
     trade: Regex,
     platform: Regex,
+    drop: Regex,
 
     // spanish
     gana: Regex,    // win, receiving
@@ -126,6 +127,7 @@ impl RegularExpression {
         let trading = to_regex([T, R, A, D, I, N, G])?;
         let trade = to_regex([T, R, A, D, E])?;
         let platform = to_regex([P, L, A, T, F, O, R, M])?;
+        let drop = to_regex([D, R, O, P])?;
         let gana = to_regex([G, A, N, A])?;
         let inverti = to_regex([I, N, V, E, R, T, I])?;
         let fondo = to_regex([F, O, N, D, O])?;
@@ -169,6 +171,7 @@ impl RegularExpression {
             trading,
             trade,
             platform,
+            drop,
             gana,
             inverti,
             fondo,
@@ -235,7 +238,10 @@ impl RegularExpression {
             || (self.plattform.is_match(&cleaned) && self.eingezahlt.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.erhalten.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.investieren.is_match(&cleaned))
-            || (self.auszahlung.is_match(&cleaned) && self.belohn.is_match(&cleaned));
+            || (self.auszahlung.is_match(&cleaned) && self.belohn.is_match(&cleaned))
+            || (self.drop.is_match(&cleaned)
+                && self.network.is_match(&cleaned)
+                && self.claim.is_match(&cleaned));
         if result {
             log::info!("Message detected as spam by RegularExpression");
             log::debug!("{}", truncated(txt));
