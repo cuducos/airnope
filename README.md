@@ -1,4 +1,4 @@
-# AirNope
+# AirNope [![Tests](https://github.com/cuducos/airnope/actions/workflows/tests.yml/badge.svg)](https://github.com/cuducos/airnope/actions/workflows/tests.yml) [![Docker image](https://github.com/cuducos/airnope/actions/workflows/docker.yaml/badge.svg)](https://github.com/cuducos/airnope/actions/workflows/docker.yaml)
 
 A simple, silent bot that keeps [Telegram](https://telegram.org/) groups free from crypto airdrop spams.
 
