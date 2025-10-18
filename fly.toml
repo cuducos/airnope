@@ -1,5 +1,5 @@
 app = 'airnope'
-primary_region = 'ams'
+primary_region = 'gru'
 
 [build]
   image = "ghcr.io/cuducos/airnope:main"
