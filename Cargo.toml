@@ -21,7 +21,7 @@ reqwest = { version = "0.12.23", features = ["gzip", "json", "rustls-tls"] }
 rust-bert = { version = "0.22.0", features = ["download-libtorch"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
-tokio = { version = "1.47.1", features = ["rt-multi-thread", "macros", "fs", "rt"] }
+tokio = { version = "1.48.0", features = ["rt-multi-thread", "macros", "fs", "rt"] }
 walkdir = "2.5.0"
 
 # See https://github.com/guillaume-be/rust-bert/issues/486
