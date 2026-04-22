@@ -6,7 +6,7 @@ use actix_web::{
 use airnope::{embeddings::Embeddings, is_spam, telegram::Client};
 use anyhow::{anyhow, Result};
 use futures::try_join;
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use serde::{Deserialize, Serialize};
 use std::{env, sync::Arc};
 use tokio::sync::Mutex;

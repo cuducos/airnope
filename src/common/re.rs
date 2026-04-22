@@ -80,6 +80,8 @@ pub struct RegularExpression {
     investieren: Regex, // investing
     auszahlung: Regex,  // payout
     belohn: Regex,      // reward
+    verdien: Regex,     // earned
+    handel: Regex,      // traded
 
     dollar_word: Regex,
     cleanup: Regex,
@@ -146,6 +148,8 @@ impl RegularExpression {
         let investieren = to_regex([I, N, V, E, S, T, I, E, R, E, N])?;
         let auszahlung = to_regex([A, U, S, Z, A, H, L, U, N, G])?;
         let belohn = to_regex([B, E, L, O, H, N])?;
+        let verdien = to_regex([V, E, R, D, I, E, N])?;
+        let handel = to_regex([H, A, N, D, E, L])?;
         let dollar_word = Regex::new(r"\$\w+")?;
         let cleanup = Regex::new(r"\s")?;
         Ok(Self {
@@ -191,6 +195,8 @@ impl RegularExpression {
             investieren,
             auszahlung,
             belohn,
+            verdien,
+            handel,
             dollar_word,
             cleanup,
         })
@@ -243,6 +249,7 @@ impl RegularExpression {
             || (self.plattform.is_match(&cleaned) && self.erhalten.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.investieren.is_match(&cleaned))
             || (self.auszahlung.is_match(&cleaned) && self.belohn.is_match(&cleaned))
+            || (self.verdien.is_match(&cleaned) && self.handel.is_match(&cleaned))
             || (self.drop.is_match(&cleaned)
                 && self.network.is_match(&cleaned)
                 && self.claim.is_match(&cleaned));
