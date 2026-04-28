@@ -2,30 +2,30 @@ use crate::{truncated, Guess};
 use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 
-const A: &str = "[аaã🅰🅰️🇦🇦о]";
-const B: &str = "[bB🇧]";
-const C: &str = "[cç]";
-const D: &str = "[dԁ🇩]";
-const E: &str = "[eEе3€ℯ🇪]";
-const F: &str = "[fF🇫]";
-const G: &str = "[gG9🇬]";
-const H: &str = "[hH🇭]";
-const I: &str = "[іiíÍI1lℹ️🇮]";
-const K: &str = "[kK🇰]";
-const L: &str = "[lL1|ℓ🇱]";
-const M: &str = "[mM]";
-const N: &str = "[nNℕñÑ🇳]";
-const O: &str = "[оo0🅾️🇴]";
-const P: &str = "[рpρϱ🅿️🇵]";
-const Q: &str = "[qQ9🇶]";
-const R: &str = "[рr🇷]";
-const S: &str = "[sSЅ]";
-const T: &str = "[tTТ7†🇹]";
-const U: &str = "[uUµ🇺]";
-const V: &str = "[vV]";
-const W: &str = "[wW🇼]";
-const Y: &str = "[yY¥🇾]";
-const Z: &str = "[zZ2Ζ🇿]";
+const A: &str = "[аaã🅰🅰️🇦🇦о𝐀𝐚𝐴𝑎𝑨𝒂𝖠𝖺𝗔𝗮𝙰𝚊]";
+const B: &str = "[bB🇧𝐁𝐛𝐵𝑏𝑩𝒃𝖡𝖻𝗕𝗯𝙱𝚋]";
+const C: &str = "[cç𝐂𝐜𝐶𝑐𝑪𝒄𝖢𝖼𝗖𝗰𝙲𝚌]";
+const D: &str = "[dԁ🇩𝐃𝐝𝐷𝑑𝑫𝒅𝖣𝖽𝗗𝗱𝙳𝚍]";
+const E: &str = "[eEе3€ℯ🇪𝐄𝐞𝐸𝑒𝑬𝒆𝖤𝖾𝗘𝗲𝙴𝚎]";
+const F: &str = "[fF🇫𝐅𝐟𝐹𝑓𝑭𝒇𝖥𝖿𝗙𝗳𝙵𝚏]";
+const G: &str = "[gG9🇬𝐆𝐠𝐺𝑔𝑮𝒈𝖦𝗀𝗚𝗴𝙶𝚐]";
+const H: &str = "[hH🇭𝐇𝐡𝐻ℎ𝑯𝒉𝖧𝗁𝗛𝗵𝙷𝚑]";
+const I: &str = "[іiíÍI1lℹ️🇮𝐈𝐢𝐼𝑖𝑰𝒊𝖨𝗂𝗜𝗶𝙸𝚒]";
+const K: &str = "[kK🇰𝐊𝐤𝐾𝑘𝑲𝒌𝖪𝗄𝗞𝗸𝙺𝚔]";
+const L: &str = "[lL1|ℓ🇱𝐋𝐥𝐿𝑙𝑳𝒍𝖫𝗅𝗟𝗹𝙻𝚕]";
+const M: &str = "[mM𝐌𝐦𝑀𝑚𝑴𝒎𝖬𝗆𝗠𝗺𝙼𝚖]";
+const N: &str = "[nNℕñÑ🇳𝐍𝐧𝑁𝑛𝑵𝒏𝖭𝗇𝗡𝗻𝙽𝚗]";
+const O: &str = "[оo0🅾️🇴𝐎𝐨𝑂𝑜𝑶𝒐𝖮𝗈𝗢𝗼𝙾𝚘]";
+const P: &str = "[рpρϱ🅿️🇵𝐏𝐩𝑃𝑝𝑷𝒑𝖯𝗉𝗣𝗽𝙿𝚙]";
+const Q: &str = "[qQ9🇶𝐐𝐪𝑄𝑞𝑸𝒒𝖰𝗊𝗤𝗾𝚀𝚚]";
+const R: &str = "[рr🇷𝐑𝐫𝑅𝑟𝑹𝒓𝖱𝗋𝗥𝗿𝚁𝚛]";
+const S: &str = "[sSЅ𝐒𝐬𝑆𝑠𝑺𝒔𝖲𝗌𝗦𝘀𝚂𝚜]";
+const T: &str = "[tTТ7†🇹𝐓𝐭𝑇𝑡𝑻𝒕𝖳𝗍𝗧𝘁𝚃𝚝]";
+const U: &str = "[uUµ🇺𝐔𝐮𝑈𝑢𝑼𝒖𝖴𝗎𝗨𝘂𝚄𝚞]";
+const V: &str = "[vV𝐕𝐯𝑉𝑣𝑽𝒗𝖵𝗏𝗩𝘃𝚅𝚟]";
+const W: &str = "[wW🇼𝐖𝐰𝑊𝑤𝑾𝒘𝖶𝗐𝗪𝘄𝚆𝚠]";
+const Y: &str = "[yY¥🇾𝐘𝐲𝑌𝑦𝒀𝒚𝖸𝗒𝗬𝘆𝚈𝚢]";
+const Z: &str = "[zZ2Ζ🇿𝐙𝐳𝑍𝑧𝒁𝒛𝖹𝗓𝗭𝘇𝚉𝚣]";
 
 #[derive(Clone)]
 pub struct RegularExpression {
@@ -39,6 +39,8 @@ pub struct RegularExpression {
     nft: Regex,
     safeguard: Regex,
     somnia: Regex,
+    cvv: Regex,
+    bet: Regex,
 
     // english
     cryptocurrenc: Regex,
@@ -73,7 +75,9 @@ pub struct RegularExpression {
     paga: Regex,         // paid
     conta: Regex,        // account
     aposta: Regex,       // bet
-    bet: Regex,
+    cartao: Regex,       // card
+    saldo: Regex,        // balance
+    garant: Regex,       // guarantee (garantia, garanto)
 
     // german
     plattform: Regex,   // platform
@@ -117,6 +121,8 @@ impl RegularExpression {
         let https = to_regex([H, T, T, P, S])?;
         let safeguard = to_regex([S, A, F, E, G, U, A, R, D])?;
         let somnia = to_regex([S, O, M, N, I, A])?;
+        let cvv = to_regex([C, V, V])?;
+        let bet = to_regex([B, E, T])?;
         let nft = to_regex([N, F, T])?;
         let cryptocurrenc = to_regex([C, R, Y, P, T, O, C, U, R, R, E, N, C])?;
         let wallet = to_regex([W, A, L, L, E, T])?;
@@ -146,7 +152,9 @@ impl RegularExpression {
         let paga = to_regex([P, A, G, A])?;
         let conta = to_regex([C, O, N, T, A])?;
         let aposta = to_regex([A, P, O, S, T, A])?;
-        let bet = to_regex([B, E, T])?;
+        let cartao = to_regex([C, A, R, T, A, O])?;
+        let saldo = to_regex([S, A, L, D, O])?;
+        let garant = to_regex([G, A, R, A, N, T])?;
         let plattform = to_regex([P, L, A, T, T, F, O, R, M])?;
         let gewinne = to_regex([G, E, W, I, N, N, E])?;
         let eingezahlt = to_regex([E, I, N, G, E, Z, A, H, L, T])?;
@@ -168,6 +176,8 @@ impl RegularExpression {
             nft,
             safeguard,
             somnia,
+            cvv,
+            bet,
             cryptocurrenc,
             wallet,
             token,
@@ -196,7 +206,9 @@ impl RegularExpression {
             paga,
             conta,
             aposta,
-            bet,
+            cartao,
+            saldo,
+            garant,
             plattform,
             gewinne,
             eingezahlt,
@@ -218,6 +230,9 @@ impl RegularExpression {
             || self.altcoin.is_match(&cleaned)
             || self.safeguard.is_match(&cleaned)
             || self.somnia.is_match(&cleaned)
+            || (self.cvv.is_match(&cleaned) && self.garant.is_match(&cleaned))
+            || (self.cartao.is_match(&cleaned) && self.garant.is_match(&cleaned))
+            || (self.saldo.is_match(&cleaned) && self.garant.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.swap.is_match(&cleaned))
