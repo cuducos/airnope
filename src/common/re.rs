@@ -62,12 +62,14 @@ pub struct RegularExpression {
     drop: Regex,
 
     // spanish
-    gana: Regex,    // win, receiving
-    inverti: Regex, // invested
-    fondo: Regex,   // fund
-    cuenta: Regex,  // account
-    clic: Regex,    // click
-    aqui: Regex,    // here
+    gana: Regex,        // win, receiving
+    inverti: Regex,     // invested
+    fondo: Regex,       // fund
+    cuenta: Regex,      // account
+    clic: Regex,        // click
+    aqui: Regex,        // here
+    criptomoned: Regex, // cryptocurrency
+    ingreso: Regex,     // income
 
     // portuguese
     plataforma: Regex,   // platform
@@ -147,6 +149,8 @@ impl RegularExpression {
         let cuenta = to_regex([C, U, E, N, T, A])?;
         let clic = to_regex([C, L, I, C])?;
         let aqui = to_regex([A, Q, U, I])?;
+        let criptomoned = to_regex([C, R, I, P, T, O, M, O, N, E, D])?;
+        let ingreso = to_regex([I, N, G, R, E, S, O])?;
         let plataforma = to_regex([P, L, A, T, A, F, O, R, M, A])?;
         let distribuicao = to_regex([D, I, S, T, R, I, B, U, I, C, A, O])?;
         let paga = to_regex([P, A, G, A])?;
@@ -201,6 +205,8 @@ impl RegularExpression {
             cuenta,
             clic,
             aqui,
+            criptomoned,
+            ingreso,
             plataforma,
             distribuicao,
             paga,
@@ -261,6 +267,7 @@ impl RegularExpression {
                 && self.aqui.is_match(&cleaned))
             || (self.inverti.is_match(&cleaned) && self.fondo.is_match(&cleaned))
             || (self.inverti.is_match(&cleaned) && self.cuenta.is_match(&cleaned))
+            || (self.criptomoned.is_match(&cleaned) && self.ingreso.is_match(&cleaned))
             || (self.gana.is_match(&cleaned) && self.bitcoin.is_match(&cleaned))
             || (self.gana.is_match(&cleaned) && self.trading.is_match(&cleaned))
             || (self.bitcoin.is_match(&cleaned) && self.https.is_match(&cleaned))
