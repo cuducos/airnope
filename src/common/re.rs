@@ -80,6 +80,7 @@ pub struct RegularExpression {
     cartao: Regex,       // card
     saldo: Regex,        // balance
     garant: Regex,       // guarantee (garantia, garanto)
+    risco: Regex,        // risk
 
     // german
     plattform: Regex,   // platform
@@ -159,6 +160,7 @@ impl RegularExpression {
         let cartao = to_regex([C, A, R, T, A, O])?;
         let saldo = to_regex([S, A, L, D, O])?;
         let garant = to_regex([G, A, R, A, N, T])?;
+        let risco = to_regex([R, I, S, C, O])?;
         let plattform = to_regex([P, L, A, T, T, F, O, R, M])?;
         let gewinne = to_regex([G, E, W, I, N, N, E])?;
         let eingezahlt = to_regex([E, I, N, G, E, Z, A, H, L, T])?;
@@ -215,6 +217,7 @@ impl RegularExpression {
             cartao,
             saldo,
             garant,
+            risco,
             plattform,
             gewinne,
             eingezahlt,
@@ -277,6 +280,8 @@ impl RegularExpression {
                 && self.paga.is_match(&cleaned))
             || (self.bet.is_match(&cleaned) && self.conta.is_match(&cleaned))
             || (self.aposta.is_match(&cleaned) && self.conta.is_match(&cleaned))
+            || (self.bet.is_match(&cleaned) && self.risco.is_match(&cleaned))
+            || (self.aposta.is_match(&cleaned) && self.risco.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.gewinne.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.eingezahlt.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.erhalten.is_match(&cleaned))
