@@ -9,16 +9,35 @@ use tokio::{sync::Mutex, task::block_in_place};
 pub const EMBEDDINGS_SIZE: usize = 384;
 
 pub struct Embeddings {
-    model: SentenceEmbeddingsModel,
+    model: Option<SentenceEmbeddingsModel>,
     cache: Cache<Vec<u8>, [f32; EMBEDDINGS_SIZE]>,
 }
 
 impl Embeddings {
     pub async fn new() -> Result<Self> {
+        let cache = Cache::new(2_048);
+        Ok(Self { model: None, cache })
+    }
+
+    pub fn init(&mut self) -> Result<()> {
+        if self.model.is_some() {
+            return Ok(());
+        }
+
+        log::info!("Loading BERT model...");
         let config = SentenceEmbeddingsConfig::from(SentenceEmbeddingsModelType::AllMiniLmL6V2);
         let model = block_in_place(|| SentenceEmbeddingsModel::new(config))?;
-        let cache = Cache::new(2_048);
-        Ok(Self { model, cache })
+        self.model = Some(model);
+        log::info!("BERT model loaded and ready.");
+
+        Ok(())
+    }
+
+    fn get_model(&mut self) -> Result<&SentenceEmbeddingsModel> {
+        self.init()?;
+        self.model
+            .as_ref()
+            .ok_or_else(|| anyhow!("SentenceEmbeddingsModel not initialized after init()"))
     }
 
     async fn calculate_from_model(
@@ -26,7 +45,8 @@ impl Embeddings {
         cache_key: Vec<u8>,
         text: &str,
     ) -> Result<[f32; EMBEDDINGS_SIZE]> {
-        let results = self.model.encode(&[text])?;
+        let model = self.get_model()?;
+        let results = model.encode(&[text])?;
         let vector = results
             .first()
             .ok_or(anyhow!("Error creating embedding"))?

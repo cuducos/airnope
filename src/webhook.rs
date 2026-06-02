@@ -271,6 +271,9 @@ async fn handler(
                     HttpResponse::Ok().finish()
                 }
                 Err(e) => {
+                    if e.to_string().contains("Could not find message in update payload") {
+                        return HttpResponse::Ok().finish();
+                    }
                     log::error!("Error checking if message is spam: {e}");
                     HttpResponse::InternalServerError().finish()
                 }
@@ -286,8 +289,17 @@ pub async fn run() -> Result<()> {
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?));
     let client = Client::new()?;
     let settings = Settings::new();
+
     client.delete_webhook().await?;
     client.set_webhook(settings.secret.as_str()).await?;
+
+    let embeddings_clone = embeddings.clone();
+    tokio::spawn(async move {
+        if let Err(e) = embeddings_clone.lock().await.init() {
+            log::error!("Failed to initialize BERT model: {e}");
+        }
+    });
+
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
