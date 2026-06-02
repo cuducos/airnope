@@ -271,7 +271,9 @@ async fn handler(
                     HttpResponse::Ok().finish()
                 }
                 Err(e) => {
-                    if e.to_string().contains("Could not find message in update payload") {
+                    if e.to_string()
+                        .contains("Could not find message in update payload")
+                    {
                         return HttpResponse::Ok().finish();
                     }
                     log::error!("Error checking if message is spam: {e}");
