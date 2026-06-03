@@ -85,7 +85,8 @@ pub async fn embeddings_for(
 }
 
 pub async fn download() -> Result<()> {
-    Embeddings::new().await?;
+    let mut embeddings = Embeddings::new().await?;
+    embeddings.init()?;
     Ok(())
 }
 
