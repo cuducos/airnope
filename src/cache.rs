@@ -1,7 +1,6 @@
 use airnope::embeddings;
-use anyhow::{anyhow, Result};
-use dirs::cache_dir;
-use std::{env, path::PathBuf};
+use anyhow::Result;
+use hf_hub::Cache;
 use tokio::fs::remove_dir_all;
 use walkdir::WalkDir;
 
@@ -16,29 +15,29 @@ fn format_size(size: u64) -> String {
     format!("{:.2} {}", size, units[unit])
 }
 
-pub async fn clean_rust_bert_cache(dry_run: bool) -> Result<()> {
-    let dir = match env::var("RUSTBERT_CACHE") {
-        Ok(value) => PathBuf::from(value),
-        Err(_) => {
-            let mut cache = cache_dir().ok_or(anyhow!("Could not find the cache directory"))?;
-            cache.push(".rustbert");
-            cache
-        }
-    };
+pub async fn clean_model_cache(dry_run: bool) -> Result<()> {
+    let cache = Cache::default();
+    let dir = cache.path();
+
     let mut label = if dry_run { "Checking" } else { "Deleting" };
-    log::info!("{} {}", label, dir.as_os_str().to_string_lossy());
-    let size = WalkDir::new(&dir)
+    log::info!("{} {}", label, dir.display());
+
+    let size = WalkDir::new(dir)
         .into_iter()
-        .filter_map(Result::ok)
+        .filter_map(|e| e.ok())
         .filter(|e| e.metadata().map(|m| m.is_file()).unwrap_or(false))
         .map(|e| e.metadata().map(|m| m.len()).unwrap_or(0))
         .sum::<u64>();
+
     if dry_run {
         label = "Total size";
     } else {
-        remove_dir_all(&dir).await?;
+        if dir.exists() {
+            remove_dir_all(&dir).await?;
+        }
         label = "Cleaned up";
     }
+
     log::info!("{} {}", label, format_size(size));
     Ok(())
 }

@@ -54,6 +54,18 @@ impl Input {
         Ok(())
     }
 
+    fn has_threshold(&self) -> bool {
+        let not_spam = self
+            .not_spam_scores
+            .iter()
+            .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+        let spam = self
+            .spam_scores
+            .iter()
+            .fold(f32::INFINITY, |a, &b| a.min(b));
+        not_spam <= spam
+    }
+
     fn stats(&self) {
         let not_spam = self
             .not_spam_scores
@@ -154,7 +166,7 @@ fn paths() -> Result<Vec<PathBuf>> {
     let files = fs::read_dir(Path::new("test_data"))?;
     for file in files {
         let path = file?.path();
-        if path.is_file() {
+        if path.is_file() && path.extension().unwrap_or_default() == "txt" {
             paths.push(path);
         }
     }
@@ -177,7 +189,11 @@ fn labels(args: Option<Vec<String>>) -> Vec<Vec<String>> {
     }
 }
 
-async fn simulate(embeddings: Arc<Mutex<Embeddings>>, input: Input, path: &PathBuf) -> Result<f32> {
+async fn simulate(
+    embeddings: Arc<Mutex<Embeddings>>,
+    input: Input,
+    path: &PathBuf,
+) -> Result<(f32, bool)> {
     let task = Task::new(path)?;
     let evaluation = Evaluation::new(&embeddings, &task, input.clone()).await?;
     let line = evaluation.to_string(&task);
@@ -189,7 +205,7 @@ async fn simulate(embeddings: Arc<Mutex<Embeddings>>, input: Input, path: &PathB
             line.red()
         },
     );
-    Ok(evaluation.score)
+    Ok((evaluation.score, evaluation.expected))
 }
 
 pub async fn run(args: Option<Vec<String>>, pattern: Option<String>) -> Result<()> {
@@ -199,6 +215,8 @@ pub async fn run(args: Option<Vec<String>>, pattern: Option<String>) -> Result<(
     let labels = labels(args);
     let paths = paths()?;
     let embeddings = Arc::new(Mutex::new(Embeddings::new().await?)).clone();
+    let mut fail = false;
+
     for (idx, label) in labels.iter().enumerate() {
         let mut input = Input::new(&embeddings, label.clone()).await?;
         println!("{}", input.to_string(idx).blue().bold());
@@ -208,12 +226,21 @@ pub async fn run(args: Option<Vec<String>>, pattern: Option<String>) -> Result<(
                     continue;
                 }
             }
-            input.push(
-                path,
-                simulate(embeddings.clone(), input.clone(), path).await?,
-            )?;
+            let (score, expected) = simulate(embeddings.clone(), input.clone(), path).await?;
+            if !expected {
+                fail = true;
+            }
+            input.push(path, score)?;
         }
-        input.stats()
+        input.stats();
+        if !input.has_threshold() {
+            fail = true;
+        }
     }
+
+    if fail {
+        std::process::exit(1);
+    }
+
     Ok(())
 }

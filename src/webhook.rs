@@ -298,7 +298,7 @@ pub async fn run() -> Result<()> {
     let embeddings_clone = embeddings.clone();
     tokio::spawn(async move {
         if let Err(e) = embeddings_clone.lock().await.init() {
-            log::error!("Failed to initialize BERT model: {e}");
+            log::error!("Failed to initialize embedding model: {e}");
         }
     });
 

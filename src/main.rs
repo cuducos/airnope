@@ -36,6 +36,6 @@ async fn main() -> Result<()> {
         Commands::Repl => repl::run().await,
         Commands::Download => cache::download_all().await,
         Commands::Bench { label, pattern } => bench::run(label, pattern).await,
-        Commands::CleanCache { dry_run } => cache::clean_rust_bert_cache(dry_run).await,
+        Commands::CleanCache { dry_run } => cache::clean_model_cache(dry_run).await,
     }
 }

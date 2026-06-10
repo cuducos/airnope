@@ -24,7 +24,7 @@ pub enum Commands {
     Repl,
     /// Cache the embedding model
     Download,
-    /// Clean `rust-bert` cache
+    /// Clean model cache
     CleanCache {
         /// Show the amount of space that would be freed, without deleting any file or directory
         #[clap(long, short, default_value_t = false)]
