@@ -89,12 +89,13 @@ impl ZeroShotClassification {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::embeddings;
     use tokio::fs;
     use tokio::io::AsyncReadExt;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_is_spam() {
-        let embeddings = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
+        let embeddings = embeddings::shared_embeddings().await.clone();
         let model = ZeroShotClassification::default(&embeddings).await.unwrap();
 
         let mut entries = fs::read_dir("test_data").await.unwrap();

@@ -140,13 +140,28 @@ pub async fn download() -> Result<()> {
 }
 
 #[cfg(test)]
+pub(crate) async fn shared_embeddings() -> &'static Arc<Mutex<Embeddings>> {
+    static EMBEDDINGS: tokio::sync::OnceCell<Arc<Mutex<Embeddings>>> =
+        tokio::sync::OnceCell::const_new();
+    EMBEDDINGS
+        .get_or_init(|| async {
+            Arc::new(Mutex::new(
+                Embeddings::new()
+                    .await
+                    .expect("Failed to create Embeddings"),
+            ))
+        })
+        .await
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::zsc::LABELS;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_embeddings_for() {
-        let model = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
+        let model = shared_embeddings().await.clone();
         let got = embeddings_for(model, LABELS[0].to_string()).await;
         assert!(got.is_ok(), "expected no error, got {got:?}");
 

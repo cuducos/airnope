@@ -1,6 +1,7 @@
 use crate::{truncated, Guess};
 use anyhow::Result;
 use regex::{Regex, RegexBuilder};
+use std::sync::LazyLock;
 
 #[derive(Clone)]
 pub struct RegularExpression {
@@ -81,8 +82,11 @@ fn to_regex(word: &str) -> Result<Regex> {
     Ok(RegexBuilder::new(&pattern).case_insensitive(true).build()?)
 }
 
+pub static RE: LazyLock<RegularExpression> =
+    LazyLock::new(|| RegularExpression::new().expect("Failed to compile regex patterns"));
+
 impl RegularExpression {
-    pub async fn new() -> Result<Self> {
+    pub fn new() -> Result<Self> {
         Ok(Self {
             airdrop: to_regex("airdrop")?,
             bitcoin: to_regex("bitcoin")?,
@@ -143,7 +147,7 @@ impl RegularExpression {
         })
     }
 
-    pub async fn is_spam(&self, txt: &str) -> Result<Guess> {
+    pub fn is_spam(&self, txt: &str) -> Result<Guess> {
         let cleaned = self.cleanup.replace_all(txt, " ");
         let result = self.airdrop.is_match(&cleaned)
             || self.cryptocurrenc.is_match(&cleaned)
@@ -281,9 +285,8 @@ mod tests {
         ];
         for (word, expected) in test_cases {
             for w in [word, word.to_uppercase().as_str()] {
-                let model = RegularExpression::new().await.unwrap();
                 let cleansed = normalize(w);
-                let got = model.is_spam(&cleansed).await.unwrap();
+                let got = RE.is_spam(&cleansed).unwrap();
                 assert_eq!(
                     got.is_spam, expected,
                     "expected: {:?} for {:?}, got: {:?}",
@@ -296,7 +299,6 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_is_spam_with_test_data() {
-        let model = RegularExpression::new().await.unwrap();
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
             let path = entry.path();
@@ -307,7 +309,7 @@ mod tests {
             let mut file = fs::File::open(&path).await.unwrap();
             file.read_to_string(&mut contents).await.unwrap();
             let cleansed = normalize(contents.as_str());
-            let got = model.is_spam(&cleansed).await.unwrap();
+            let got = RE.is_spam(&cleansed).unwrap();
             assert!(got.is_spam, "{} was not flagged as spam", path.display(),);
         }
     }

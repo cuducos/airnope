@@ -116,9 +116,8 @@ pub async fn is_spam_with_custom_classifier(
     classifier: ZeroShotClassification,
     txt: &str,
 ) -> Result<Guess> {
-    let regex = re::RegularExpression::new().await?;
     let normalized = normalize(txt);
-    let result = regex.is_spam(&normalized).await?;
+    let result = re::RE.is_spam(&normalized)?;
     if !result.is_spam {
         return Ok(result);
     }
@@ -147,7 +146,6 @@ fn truncated(message: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use embeddings::Embeddings;
     use std::collections::HashMap;
     use std::io::Read;
     use std::path::Path;
@@ -156,7 +154,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_is_spam() {
-        let embeddings = Arc::new(Mutex::new(Embeddings::new().await.unwrap()));
+        let embeddings = embeddings::shared_embeddings().await.clone();
+        let classifier = zsc::ZeroShotClassification::default(&embeddings)
+            .await
+            .unwrap();
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
             let path = entry.path();
@@ -167,7 +168,9 @@ mod tests {
             let mut file = fs::File::open(&path).await.unwrap();
             file.read_to_string(&mut contents).await.unwrap();
 
-            let got = is_spam(&embeddings, &contents).await.unwrap();
+            let got = is_spam_with_custom_classifier(&embeddings, classifier.clone(), &contents)
+                .await
+                .unwrap();
             let expected = path
                 .file_stem()
                 .unwrap()
