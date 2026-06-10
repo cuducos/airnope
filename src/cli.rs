@@ -32,4 +32,34 @@ pub enum Commands {
     },
     /// Remove the bot webhook from Telegram's server
     RemoveWebhook,
+    /// Evaluate classifier accuracy against a Kaggle dataset
+    #[command(group(
+        clap::ArgGroup::new("expected")
+            .required(true)
+            .args(["spam", "not_spam"])
+    ))]
+    Kaggle {
+        /// Kaggle dataset in 'owner/name' format
+        dataset: String,
+
+        /// CSV column containing the text to classify
+        #[arg(long)]
+        column: String,
+
+        /// Optional CSV column to filter by
+        #[arg(long)]
+        filter_column: Option<String>,
+
+        /// Only include rows where filter-column matches this value
+        #[arg(long)]
+        filter_value: Option<String>,
+
+        /// Expect all rows to be spam
+        #[arg(long, conflicts_with = "not_spam")]
+        spam: bool,
+
+        /// Expect all rows to NOT be spam
+        #[arg(long, conflicts_with = "spam")]
+        not_spam: bool,
+    },
 }

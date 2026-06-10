@@ -6,6 +6,7 @@ use std::env;
 mod bench;
 mod cache;
 mod cli;
+mod kaggle;
 mod repl;
 mod webhook;
 
@@ -37,5 +38,22 @@ async fn main() -> Result<()> {
         Commands::Download => cache::download_all().await,
         Commands::Bench { label, pattern } => bench::run(label, pattern).await,
         Commands::CleanCache { dry_run } => cache::clean_model_cache(dry_run).await,
+        Commands::Kaggle {
+            dataset,
+            column,
+            filter_column,
+            filter_value,
+            spam,
+            ..
+        } => {
+            kaggle::run(
+                &dataset,
+                &column,
+                filter_column.as_deref(),
+                filter_value.as_deref(),
+                spam,
+            )
+            .await
+        }
     }
 }

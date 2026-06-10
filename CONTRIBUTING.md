@@ -79,6 +79,15 @@ To test combined labels, separate them with commas inside the quotes, for exampl
 $ cargo run -- bench "airdop spam" "generic spam, crypto airdrop offer"
 ```
 
+## Evaluating against a Kaggle dataset
+
+Downloads and evaluates any public Kaggle dataset as CSV. Requires `KAGGLE_USERNAME` and [`KAGGLE_API_TOKEN`](https://www.kaggle.com/docs/api) environment variables.
+
+```console
+$ cargo run -- kaggle mexwell/telegram-spam-or-ham --column text --filter-column text_type --filter-value ham --not-spam
+```
+
+
 ## Before opening a PR
 
 Make sure these checks pass:
