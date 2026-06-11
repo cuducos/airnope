@@ -114,7 +114,6 @@ impl RegularExpression {
             network: to_regex("network")?,
             contract: to_regex("contract")?,
             fund: to_regex("fund")?,
-            transaction: to_regex("transaction")?,
             trading: to_regex("trading")?,
             trade: to_regex("trade")?,
             platform: to_regex("platform")?,
