@@ -1,17 +1,15 @@
 use airnope::{
-    embeddings::Embeddings,
-    is_spam_with_custom_classifier,
-    zsc::ZeroShotClassification,
+    embeddings::Embeddings, is_spam_with_custom_classifier, zsc::ZeroShotClassification,
 };
 use anyhow::{anyhow, Context, Result};
 use std::{env, io::Cursor, sync::Arc};
 use tokio::sync::Mutex;
 
 fn credentials() -> Result<(String, String)> {
-    let username = env::var("KAGGLE_USERNAME")
-        .context("KAGGLE_USERNAME environment variable not set")?;
-    let token = env::var("KAGGLE_API_TOKEN")
-        .context("KAGGLE_API_TOKEN environment variable not set")?;
+    let username =
+        env::var("KAGGLE_USERNAME").context("KAGGLE_USERNAME environment variable not set")?;
+    let token =
+        env::var("KAGGLE_API_TOKEN").context("KAGGLE_API_TOKEN environment variable not set")?;
     if token.trim().is_empty() {
         return Err(anyhow!("KAGGLE_API_TOKEN is set but empty"));
     }
@@ -65,8 +63,7 @@ async fn download_dataset(owner: &str, dataset: &str) -> Result<Vec<u8>> {
 
 fn find_csv_in_zip(zip_data: &[u8]) -> Result<Vec<u8>> {
     let cursor = Cursor::new(zip_data);
-    let mut archive = zip::ZipArchive::new(cursor)
-        .context("Failed to open dataset zip")?;
+    let mut archive = zip::ZipArchive::new(cursor).context("Failed to open dataset zip")?;
     for i in 0..archive.len() {
         let mut file = archive
             .by_index(i)
@@ -106,10 +103,9 @@ fn parse_csv(
 
     let filter_idx = filter_column
         .map(|fc| {
-            headers
-                .iter()
-                .position(|h| h == fc)
-                .ok_or_else(|| anyhow!("Filter column '{fc}' not found in CSV headers: {headers:?}"))
+            headers.iter().position(|h| h == fc).ok_or_else(|| {
+                anyhow!("Filter column '{fc}' not found in CSV headers: {headers:?}")
+            })
         })
         .transpose()?;
 
@@ -187,15 +183,15 @@ pub async fn run(
         } else {
             report.wrong += 1;
             log::error!(
-            "row={} is_spam={} expected={} score={:.3} text={}",
-            record.row,
-            result.is_spam,
-            expected_spam,
-            result.score.unwrap_or(0.0),
-            &record.text.chars().take(80).collect::<String>(),
-        );
+                "row={} is_spam={} expected={} score={:.3} text={}",
+                record.row,
+                result.is_spam,
+                expected_spam,
+                result.score.unwrap_or(0.0),
+                &record.text.chars().take(80).collect::<String>(),
+            );
         }
-        if report.total % 100 == 0 {
+        if report.total.is_multiple_of(100) {
             eprintln!(
                 "{}/{} ({:.0}%)",
                 report.total,

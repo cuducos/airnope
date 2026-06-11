@@ -31,7 +31,6 @@ pub struct RegularExpression {
     network: Regex,
     contract: Regex,
     fund: Regex,
-    transaction: Regex,
     trading: Regex,
     trade: Regex,
     platform: Regex,
@@ -52,6 +51,8 @@ pub struct RegularExpression {
     distribuicao: Regex, // distribution
     paga: Regex,         // paid
     conta: Regex,        // account
+    contact: Regex,      // contact (exclude from conta)
+    contain: Regex,      // contain (exclude from conta)
     aposta: Regex,       // bet
     cartao: Regex,       // card
     saldo: Regex,        // balance
@@ -69,6 +70,8 @@ pub struct RegularExpression {
     verdien: Regex,     // earned
     handel: Regex,      // traded
 
+    // other
+    verif: Regex,
     dollar_word: Regex,
     cleanup: Regex,
 }
@@ -97,9 +100,9 @@ impl RegularExpression {
             safeguard: to_regex("safeguard")?,
             somnia: to_regex("somnia")?,
             cvv: to_regex("cvv")?,
-            bet: to_regex("bet")?,
-            nft: to_regex("nft")?,
-            cryptocurrenc: to_regex("cryptocurrenc")?,
+            bet: Regex::new(r#"(?i)\bbet(s|ting)?\b"#)?,
+            nft: Regex::new(r#"(?i)\bnfts?\b"#)?,
+            cryptocurrenc: Regex::new(r#"(?i)\bcryptocurrenc"#)?,
             wallet: to_regex("wallet")?,
             token: to_regex("token")?,
             claim: to_regex("claim")?,
@@ -116,7 +119,7 @@ impl RegularExpression {
             trade: to_regex("trade")?,
             platform: to_regex("platform")?,
             drop: to_regex("drop")?,
-            gana: to_regex("gana")?,
+            gana: Regex::new(r#"(?i)\bgana"#)?,
             inverti: to_regex("inverti")?,
             fondo: to_regex("fondo")?,
             cuenta: to_regex("cuenta")?,
@@ -128,6 +131,8 @@ impl RegularExpression {
             distribuicao: to_regex("distribuicao")?,
             paga: to_regex("paga")?,
             conta: to_regex("conta")?,
+            contact: to_regex("contact")?,
+            contain: to_regex("contain")?,
             aposta: to_regex("aposta")?,
             cartao: to_regex("cartao")?,
             saldo: to_regex("saldo")?,
@@ -142,9 +147,14 @@ impl RegularExpression {
             belohn: to_regex("belohn")?,
             verdien: to_regex("verdien")?,
             handel: to_regex("handel")?,
+            verif: to_regex("verif")?,
             dollar_word: Regex::new(r"\$\w+")?,
             cleanup: Regex::new(r"\s")?,
         })
+    }
+
+    fn has_conta(&self, txt: &str) -> bool {
+        self.conta.is_match(txt) && !self.contact.is_match(txt) && !self.contain.is_match(txt)
     }
 
     pub fn is_spam(&self, txt: &str) -> Result<Guess> {
@@ -152,16 +162,17 @@ impl RegularExpression {
         let result = self.airdrop.is_match(&cleaned)
             || self.cryptocurrenc.is_match(&cleaned)
             || self.altcoin.is_match(&cleaned)
-            || self.safeguard.is_match(&cleaned)
+            || (self.safeguard.is_match(&cleaned) && self.verif.is_match(&cleaned))
+            || (self.safeguard.is_match(&cleaned) && self.https.is_match(&cleaned))
             || self.somnia.is_match(&cleaned)
             || (self.cvv.is_match(&cleaned) && self.garant.is_match(&cleaned))
             || (self.cartao.is_match(&cleaned) && self.garant.is_match(&cleaned))
             || (self.saldo.is_match(&cleaned) && self.garant.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.token.is_match(&cleaned))
-            || (self.wallet.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.swap.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.dollar_word.is_match(&cleaned))
             || (self.wallet.is_match(&cleaned) && self.nft.is_match(&cleaned))
+            || (self.wallet.is_match(&cleaned) && self.network.is_match(&cleaned))
             || (self.network.is_match(&cleaned) && self.nft.is_match(&cleaned))
             || (self.platform.is_match(&cleaned) && self.nft.is_match(&cleaned))
             || (self.platform.is_match(&cleaned)
@@ -175,10 +186,11 @@ impl RegularExpression {
             || (self.crypto.is_match(&cleaned) && self.reward.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.opportunity.is_match(&cleaned))
             || (self.crypto.is_match(&cleaned) && self.earning.is_match(&cleaned))
+            || (self.crypto.is_match(&cleaned) && self.finance.is_match(&cleaned))
             || (self.finance.is_match(&cleaned) && self.reward.is_match(&cleaned))
-            || (self.finance.is_match(&cleaned) && self.network.is_match(&cleaned))
-            || (self.transaction.is_match(&cleaned) && self.trading.is_match(&cleaned))
-            || (self.transaction.is_match(&cleaned) && self.trade.is_match(&cleaned))
+            || (self.bitcoin.is_match(&cleaned) && self.trading.is_match(&cleaned))
+            || (self.btc.is_match(&cleaned) && self.trading.is_match(&cleaned))
+            || (self.token.is_match(&cleaned) && self.trading.is_match(&cleaned))
             || (self.gana.is_match(&cleaned)
                 && self.inverti.is_match(&cleaned)
                 && self.clic.is_match(&cleaned)
@@ -193,8 +205,8 @@ impl RegularExpression {
             || (self.plataforma.is_match(&cleaned)
                 && self.distribuicao.is_match(&cleaned)
                 && self.paga.is_match(&cleaned))
-            || (self.bet.is_match(&cleaned) && self.conta.is_match(&cleaned))
-            || (self.aposta.is_match(&cleaned) && self.conta.is_match(&cleaned))
+            || (self.bet.is_match(&cleaned) && self.has_conta(&cleaned))
+            || (self.aposta.is_match(&cleaned) && self.has_conta(&cleaned))
             || (self.bet.is_match(&cleaned) && self.risco.is_match(&cleaned))
             || (self.aposta.is_match(&cleaned) && self.risco.is_match(&cleaned))
             || (self.plattform.is_match(&cleaned) && self.gewinne.is_match(&cleaned))
@@ -302,7 +314,14 @@ mod tests {
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
             let path = entry.path();
-            if path.extension().unwrap() != "txt" {
+            if path.extension().unwrap() != "txt"
+                || !path
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .starts_with("spam")
+            {
                 continue;
             }
             let mut contents = String::new();

@@ -161,7 +161,14 @@ mod tests {
         let mut entries = fs::read_dir("test_data").await.unwrap();
         while let Some(entry) = entries.next_entry().await.unwrap() {
             let path = entry.path();
-            if path.extension().unwrap() != "txt" {
+            if path.extension().unwrap() != "txt"
+                || !path
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .starts_with("spam")
+            {
                 continue;
             }
             let mut contents = String::new();
