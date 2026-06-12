@@ -1,7 +1,7 @@
 FROM rust:1-slim-trixie AS build
 
 WORKDIR /usr/src/airnope
-ENV BUILD_PKGS="gcc make libc6-dev ca-certificates"
+ENV BUILD_PKGS="ca-certificates gcc libc6-dev libssl-dev make pkg-config"
 
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
